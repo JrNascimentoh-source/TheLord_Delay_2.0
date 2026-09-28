@@ -41,7 +41,7 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
 <section class="controls">
 <div class="field"><label for="target">APLICAR DELAY EM:</label><div class="select-wrap"><select id="target"><option value="1">Tela 1</option><option value="2">Tela 2</option><option value="all">Ambas as telas</option></select></div></div>
 <div class="divider"></div>
-<div class="field delay"><label for="delay">DELAY:</label><input id="delay" type="range" min="0" max="30" step="1" value="0"><div class="range-labels"><span>0s</span><span>30s</span></div></div>
+<div class="field delay"><label for="delay">DELAY:</label><input id="delay" type="range" min="0" max="60" step="1" value="0"><div class="range-labels"><span>0s</span><span>60s</span></div></div>
 <output class="badge" id="badge" for="delay">0s</output>
 </section>
 <section class="screens">
@@ -86,7 +86,7 @@ function createScreen(id){
 const screens={1:createScreen("1"),2:createScreen("2")};window.TheLord={screens};
 const range=$("#delay"),badge=$("#badge"),target=$("#target"),btn=$("#toggle");
 const targets=()=>target.value==="all"?[screens[1],screens[2]]:[screens[target.value]];
-function syncRange(){const v=+range.value;range.style.setProperty("--p",v/30*100+"%");badge.textContent=v+"s"}
+function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}
 function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange()}
 function syncButton(){const on=targets().every(s=>s.active);btn.classList.toggle("on",on);btn.setAttribute("aria-pressed",String(on));$("#toggle-label").textContent=on?"DESATIVAR DELAY":"ATIVAR DELAY"}
 function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton()}
