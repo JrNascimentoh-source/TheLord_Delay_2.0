@@ -2,56 +2,100 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#06060a">
-<meta name="description" content="TheLord Delay 2.0">
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="css/theme.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/components.css">
 <title>TheLord Delay 2.0</title>
+<style>
+:root{--bg:#06060a;--panel:#0a0a10;--red:#e0161f;--red-glow:rgba(255,30,40,.55);--red-dim:#5a0a10;--gold:#e8b34e;--gold-hi:#ffd980;--gold-lo:#b8791c;--gold-text:#f0c56a;--green:#3ddc6b;--txt:#f2e6cf;--muted:#b9a98a;--r-lg:20px;--r-md:14px;--r-sm:10px}
+*{box-sizing:border-box;margin:0;padding:0}html,body{width:100%;height:100%;min-height:100%;overflow-x:hidden}
+body{background:radial-gradient(ellipse at 50% 0,#3a0509 0,var(--bg) 55%);color:var(--txt);font-family:"Segoe UI",Roboto,system-ui,sans-serif;padding:clamp(6px,1vw,20px)}
+button,select,input{font:inherit;color:inherit;cursor:pointer}button{background:none;border:0}:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.app{width:100%;min-height:calc(100dvh - clamp(12px,2vw,40px));display:flex;flex-direction:column;background:linear-gradient(160deg,#0b0b12,#050508);border:1px solid var(--red);border-radius:var(--r-lg);padding:clamp(8px,1.2vw,26px);box-shadow:0 0 0 1px #000,0 0 28px var(--red-glow),inset 0 0 40px rgba(180,10,20,.25)}
+.titlebar{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:14px;height:22px}.titlebar .win{display:flex;gap:22px}
+.header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:clamp(6px,.8vw,16px) 12px;margin:clamp(6px,.8vw,14px) 0 clamp(8px,1.2vw,22px);border:1px solid var(--red-dim);border-radius:var(--r-md);background:linear-gradient(#0e0e16,#08080d)}
+.header>.icon-btn:last-child{justify-self:end}.icon-btn{color:var(--gold);width:36px;height:36px;display:grid;place-items:center;border-radius:50%;font-size:23px}.icon-btn:hover{color:var(--gold-hi)}
+.brand{display:flex;align-items:center;justify-content:center;gap:10px}.brand svg{width:clamp(38px,4vw,72px);height:auto}.brand-text{display:flex;flex-direction:column;align-items:center;line-height:1}.brand-text b{font-size:clamp(22px,2.8vw,54px);letter-spacing:.06em;font-family:Georgia,"Times New Roman",serif;background:linear-gradient(var(--gold-hi),var(--gold-lo));-webkit-background-clip:text;background-clip:text;color:transparent}.brand-text i{font-style:normal;color:var(--red);font-size:clamp(11px,1.1vw,20px);letter-spacing:.5em;margin-top:2px;text-shadow:0 0 8px var(--red-glow)}
+.controls{display:flex;align-items:center;gap:clamp(12px,2vw,36px);padding:clamp(10px,1.2vw,24px) clamp(12px,1.6vw,32px);border:1px solid var(--gold-lo);border-radius:var(--r-lg);background:#0a0a10;margin-bottom:clamp(10px,1.4vw,26px);box-shadow:0 0 14px rgba(255,30,40,.25)}
+.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:12px;color:var(--txt);letter-spacing:.04em}.select-wrap{position:relative;width:clamp(170px,30vw,560px)}.select-wrap select{appearance:none;width:100%;padding:12px 40px 12px 16px;border:1px solid var(--red);border-radius:var(--r-md);background:#0c0c12;box-shadow:0 0 10px var(--red-glow);font-size:clamp(14px,1.3vw,24px)}.select-wrap:after{content:"";position:absolute;right:16px;top:50%;width:8px;height:8px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:translateY(-70%) rotate(45deg);pointer-events:none}.divider{width:1px;align-self:stretch;background:linear-gradient(transparent,var(--red-dim),transparent)}.delay{flex:1}.range-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--txt);margin-top:2px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:5px;background:linear-gradient(90deg,var(--red) var(--p,0%),#2a1216 var(--p,0%));margin:10px 0 4px;box-shadow:0 0 8px var(--red-glow)}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--gold-hi),var(--gold-lo));box-shadow:0 0 8px rgba(255,190,80,.7)}input[type=range]::-moz-range-thumb{width:20px;height:20px;border:0;border-radius:50%;background:var(--gold)}.badge{min-width:52px;text-align:center;padding:12px 14px;border:1px solid var(--gold);border-radius:var(--r-md);color:var(--gold-text);font-size:clamp(14px,1.3vw,24px);background:#0b0b10}
+.screens{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.4vw,26px);margin-bottom:clamp(10px,1.4vw,26px);flex:1;min-height:0}.screen{display:flex;flex-direction:column;min-width:0;padding:clamp(8px,1vw,20px);border:1px solid var(--red);border-radius:var(--r-lg);background:var(--panel);box-shadow:0 0 16px rgba(255,30,40,.3),inset 0 0 20px rgba(150,10,20,.18)}.screen.selected{border-color:var(--gold);box-shadow:0 0 18px rgba(232,179,78,.35)}
+.screen-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}.screen-head h2{flex:1;font-size:clamp(14px,1.3vw,24px);font-weight:700;color:var(--gold-text);letter-spacing:.03em}.flame{color:var(--red);filter:drop-shadow(0 0 5px var(--red-glow))}.dup{color:var(--gold)}.screen.selected .dup{color:var(--green)}.tag{font-size:clamp(11px,1vw,17px);padding:3px 10px;border:1px solid var(--gold-lo);border-radius:999px;color:var(--gold-text);margin-right:6px}.tag.on{border-color:var(--red);color:#fff;background:rgba(224,22,31,.35);box-shadow:0 0 8px var(--red-glow)}
+.urlbar{display:flex;align-items:center;gap:10px;padding:6px 8px 6px 14px;border:1px solid var(--gold-lo);border-radius:var(--r-md);background:#090910;margin-bottom:10px}.urlbar input{flex:1;min-width:0;background:none;border:0;color:var(--txt);font-size:clamp(12px,1.1vw,20px);outline:none}.lock{color:var(--gold)}.go{padding:6px 12px;border:1px solid var(--gold);border-radius:var(--r-sm);color:var(--gold-text);font-weight:700;background:linear-gradient(#2a1c08,#150e04);font-size:13px}
+.view{position:relative;flex:1;min-height:110px;border:1px solid #1d1d28;border-radius:var(--r-md);background:#0b0b12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;margin-bottom:10px;overflow:hidden}.screen-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;z-index:2}.screen-frame[hidden]{display:none}.g-logo{font:600 clamp(24px,3.2vw,66px) "Product Sans",Arial,sans-serif;letter-spacing:-.02em}.g-logo span:nth-child(1),.g-logo span:nth-child(4){color:#4285f4}.g-logo span:nth-child(2),.g-logo span:nth-child(6){color:#ea4335}.g-logo span:nth-child(3){color:#fbbc05}.g-logo span:nth-child(5){color:#34a853}.search{width:70%;height:clamp(26px,2.4vw,44px);border-radius:999px;background:#171722;border:1px solid #262633;display:flex;align-items:center;padding-left:12px;color:var(--muted)}
+.nav{display:flex;justify-content:space-between;padding:0 6px}.nav button{width:clamp(34px,3.4vw,62px);height:clamp(34px,3.4vw,62px);border-radius:50%;border:1px solid var(--gold);color:var(--gold-text);background:radial-gradient(circle at 50% 30%,#2b1d08,#100a03);font-size:clamp(14px,1.4vw,26px);font-weight:700;box-shadow:0 0 8px rgba(232,179,78,.25)}.nav button:hover{background:#3a2809}
+.cta-wrap{position:relative;display:flex;justify-content:center;margin-bottom:12px}.cta-wrap:before,.cta-wrap:after{content:"";position:absolute;top:50%;width:22%;height:2px;background:linear-gradient(90deg,transparent,var(--red));box-shadow:0 0 10px var(--red-glow)}.cta-wrap:before{left:6%}.cta-wrap:after{right:6%;transform:scaleX(-1)}.cta{position:relative;z-index:1;display:flex;align-items:center;gap:14px;padding:clamp(10px,1.3vw,22px) clamp(28px,5vw,100px);border-radius:40px;font-size:clamp(16px,1.8vw,32px);font-weight:800;letter-spacing:.03em;color:#2a1600;background:linear-gradient(#ffe09a,var(--gold) 45%,var(--gold-lo));border:1px solid var(--gold-hi);box-shadow:0 0 20px rgba(255,190,80,.5),inset 0 2px 0 rgba(255,255,255,.5);transition:transform .12s}.cta:active{transform:scale(.97)}.cta.on{background:linear-gradient(#ff5b5b,var(--red) 50%,#7c0a10);color:#fff;border-color:#ff8a8a;box-shadow:0 0 22px var(--red-glow)}
+.footer{display:flex;justify-content:space-between;padding:12px 16px;border:1px solid var(--red-dim);border-radius:var(--r-md);font-size:clamp(11px,1vw,18px);color:var(--gold-text)}
+@media (orientation:portrait) and (max-width:720px){.controls{flex-direction:column;align-items:stretch}.divider{display:none}.select-wrap{width:100%}.screens{grid-template-columns:1fr}.cta{padding:14px 36px;font-size:19px}}
+@media (orientation:landscape) and (max-width:720px){.select-wrap{width:220px}.view{min-height:150px}.cta{padding:12px 40px;font-size:18px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
 <body>
 <main class="app">
-  <div class="titlebar" aria-hidden="true"><span>♛ ⌄</span><span class="win"><span>–</span><span>☐</span><span>✕</span></span></div>
-  <header class="header">
-    <button class="icon-btn" aria-label="Menu">☰</button>
-    <div class="brand">
-      <svg class="crown" viewBox="0 0 54 44" aria-hidden="true"><path d="M4 36L8 12l11 12L27 6l8 18 11-12 4 24Z"/><rect x="6" y="37" width="42" height="5" rx="2"/><circle cx="8" cy="10" r="3"/><circle cx="27" cy="4" r="3"/><circle cx="46" cy="10" r="3"/></svg>
-      <div class="brand-text"><b>THELORD</b><i>DELAY</i></div>
-    </div>
-    <button class="icon-btn" aria-label="Configurações">⚙</button>
-  </header>
-
-  <section class="controls">
-    <div class="field"><label for="target">APLICAR DELAY EM:</label><div class="select-wrap"><select id="target"><option value="1">Tela 1</option><option value="2">Tela 2</option><option value="all">Ambas as telas</option></select></div></div>
-    <div class="divider"></div>
-    <div class="field delay"><label for="delay">DELAY:</label><input id="delay" type="range" min="0" max="30" step="1" value="0"><div class="range-labels"><span>0s</span><span>30s</span></div></div>
-    <output class="badge" id="badge" for="delay">0s</output>
-  </section>
-
-  <section class="screens">
-    <article class="screen selected" id="screen-1" data-screen="1">
-      <div class="screen-head"><span class="flame">🔥</span><h2>TELA 1</h2><span class="dup" aria-hidden="true">▣</span></div>
-      <div class="urlbar"><span class="lock">🔒</span><input data-url="1" value="https://www.google.com" aria-label="Endereço da Tela 1"><button class="go" data-go="1">IR</button></div>
-      <div class="view" id="view-1"><div class="placeholder"><div class="g-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div><div class="search">🔍</div><p>Digite um endereço e pressione IR.</p></div><iframe title="Tela 1" hidden sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals" allow="fullscreen *; payment *; clipboard-read *; clipboard-write *" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-      <div class="nav"><button data-nav="home" data-screen="1" aria-label="Início">⌂</button><button data-nav="back" data-screen="1" aria-label="Voltar">‹</button><button data-nav="forward" data-screen="1" aria-label="Avançar">›</button><button data-nav="reload" data-screen="1" aria-label="Recarregar">↻</button><button data-nav="refresh" data-screen="1" aria-label="Atualizar">⟳</button></div>
-    </article>
-
-    <article class="screen" id="screen-2" data-screen="2">
-      <div class="screen-head"><span class="flame">🔥</span><h2>TELA 2</h2><span class="dup" aria-hidden="true">▣</span></div>
-      <div class="urlbar"><span class="lock">🔒</span><input data-url="2" value="https://www.google.com" aria-label="Endereço da Tela 2"><button class="go" data-go="2">IR</button></div>
-      <div class="view" id="view-2"><div class="placeholder"><div class="g-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div><div class="search">🔍</div><p>Digite um endereço e pressione IR.</p></div><iframe title="Tela 2" hidden sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals" allow="fullscreen *; payment *; clipboard-read *; clipboard-write *" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-      <div class="nav"><button data-nav="home" data-screen="2" aria-label="Início">⌂</button><button data-nav="back" data-screen="2" aria-label="Voltar">‹</button><button data-nav="forward" data-screen="2" aria-label="Avançar">›</button><button data-nav="reload" data-screen="2" aria-label="Recarregar">↻</button><button data-nav="go" data-screen="2" aria-label="Ir">IR</button></div>
-    </article>
-  </section>
-
-  <div class="cta-wrap"><button class="cta" id="toggle" aria-pressed="false"><span>♛</span><span id="toggle-label">ATIVAR DELAY</span></button></div>
-  <footer class="footer"><span>TheLord Delay</span><span>v2.0</span></footer>
+<div class="titlebar" aria-hidden="true"><span>♛ ⌄</span><span class="win"><span>–</span><span>☐</span><span>✕</span></span></div>
+<header class="header">
+<button class="icon-btn" aria-label="Menu">☰</button>
+<div class="brand"><svg viewBox="0 0 54 44" aria-hidden="true"><defs><linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe09a"/><stop offset="1" stop-color="#b8791c"/></linearGradient></defs><path d="M4 36L8 12 19 24 27 6 35 24 46 12 50 36Z" fill="url(#gd)"/><rect x="6" y="37" width="42" height="5" rx="2" fill="url(#gd)"/><circle cx="8" cy="10" r="3" fill="#ffe09a"/><circle cx="27" cy="4" r="3" fill="#ffe09a"/><circle cx="46" cy="10" r="3" fill="#ffe09a"/></svg><div class="brand-text"><b>THELORD</b><i>DELAY</i></div></div>
+<button class="icon-btn" aria-label="Configurações">⚙</button>
+</header>
+<section class="controls">
+<div class="field"><label for="target">APLICAR DELAY EM:</label><div class="select-wrap"><select id="target"><option value="1">Tela 1</option><option value="2">Tela 2</option><option value="all">Ambas as telas</option></select></div></div>
+<div class="divider"></div>
+<div class="field delay"><label for="delay">DELAY:</label><input id="delay" type="range" min="0" max="30" step="1" value="0"><div class="range-labels"><span>0s</span><span>30s</span></div></div>
+<output class="badge" id="badge" for="delay">0s</output>
+</section>
+<section class="screens">
+<article class="screen selected" id="screen-1">
+<div class="screen-head"><span class="flame">🔥</span><h2>TELA 1</h2><span class="dup">▣</span></div>
+<div class="urlbar"><span class="lock">🔒</span><input value="https://www.google.com" aria-label="Endereço da Tela 1"><button class="go">IR</button></div>
+<div class="view"><div class="g-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div><div class="search">🔍</div><iframe class="screen-frame" title="Navegador da Tela 1" hidden sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals" allow="fullscreen *; payment *; clipboard-read *; clipboard-write *" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+<div class="nav"><button aria-label="Início">⌂</button><button aria-label="Voltar">‹</button><button aria-label="Avançar">›</button><button aria-label="Recarregar">↻</button><button aria-label="Atualizar">⟳</button></div>
+</article>
+<article class="screen" id="screen-2">
+<div class="screen-head"><span class="flame">🔥</span><h2>TELA 2</h2><span class="dup">▣</span></div>
+<div class="urlbar"><span class="lock">🔒</span><input value="https://www.google.com" aria-label="Endereço da Tela 2"><button class="go">IR</button></div>
+<div class="view"><div class="g-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div><div class="search">🔍</div><iframe class="screen-frame" title="Navegador da Tela 2" hidden sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals" allow="fullscreen *; payment *; clipboard-read *; clipboard-write *" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+<div class="nav"><button aria-label="Início">⌂</button><button aria-label="Voltar">‹</button><button aria-label="Avançar">›</button><button aria-label="Recarregar">↻</button><button aria-label="Ir">IR</button></div>
+</article>
+</section>
+<div class="cta-wrap"><button class="cta" id="toggle" aria-pressed="false"><span>♛</span><span id="toggle-label">ATIVAR DELAY</span></button></div>
+<footer class="footer"><span>TheLord Delay</span><span>v2.0</span></footer>
 </main>
-<script src="js/storage.js"></script>
-<script src="js/browser.js"></script>
-<script src="js/delay.js"></script>
-<script src="js/app.js"></script>
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const HOMES={1:"https://www.google.com",2:"https://www.google.com"};
+function createScreen(id){
+ const root=$("#screen-"+id),input=$(".urlbar input",root),frame=$(".screen-frame",root);
+ const [bHome,bBack,bFwd,bReload,bLast]=root.querySelectorAll(".nav button");
+ const tag=document.createElement("span");tag.className="tag";$(".screen-head h2",root).after(tag);
+ const s={id,root,input,frame,delay:0,active:false,history:[HOMES[id]],index:0,
+  get url(){return this.history[this.index]},
+  render(){this.input.value=this.url;tag.textContent=(this.active?"● ":"")+this.delay+"s";tag.classList.toggle("on",this.active)},
+  load(url){root.querySelectorAll(".view>.g-logo,.view>.search").forEach(e=>e.style.display="none");this.frame.hidden=false;this.frame.src=url},
+  nav(action){const run=()=>{action();root.dispatchEvent(new CustomEvent("screen:action",{detail:{id:this.id,url:this.url,delay:this.delay,active:this.active}}))};const wait=this.active&&this.delay>0?this.delay*1000:0;wait?setTimeout(run,wait):run()},
+  go(u){u=(u||"").trim();if(!u)return;if(!/^https?:\/\//i.test(u))u="https://"+u;this.nav(()=>{this.history=this.history.slice(0,this.index+1).concat(u);this.index++;this.render();this.load(u)})},
+  back(){if(this.index>0)this.nav(()=>{this.index--;this.render();this.load(this.url)})},
+  forward(){if(this.index<this.history.length-1)this.nav(()=>{this.index++;this.render();this.load(this.url)})},
+  reload(){this.nav(()=>{this.render();if(this.frame.src)this.frame.src=this.frame.src})},
+  home(){this.go(HOMES[id])}
+ };
+ bHome.onclick=()=>s.home();bBack.onclick=()=>s.back();bFwd.onclick=()=>s.forward();bReload.onclick=()=>s.reload();
+ bLast.onclick=()=>id==="1"?s.reload():s.go(input.value);
+ $(".urlbar .go",root).onclick=()=>s.go(input.value);
+ input.addEventListener("keydown",e=>{if(e.key==="Enter")s.go(input.value)});
+ s.render();return s;
+}
+const screens={1:createScreen("1"),2:createScreen("2")};window.TheLord={screens};
+const range=$("#delay"),badge=$("#badge"),target=$("#target"),btn=$("#toggle");
+const targets=()=>target.value==="all"?[screens[1],screens[2]]:[screens[target.value]];
+function syncRange(){const v=+range.value;range.style.setProperty("--p",v/30*100+"%");badge.textContent=v+"s"}
+function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange()}
+function syncButton(){const on=targets().every(s=>s.active);btn.classList.toggle("on",on);btn.setAttribute("aria-pressed",String(on));$("#toggle-label").textContent=on?"DESATIVAR DELAY":"ATIVAR DELAY"}
+function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton()}
+function toggle(){const next=!targets().every(s=>s.active);targets().forEach(s=>{s.active=next;s.render()});syncButton()}
+range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);onTarget();
+screens[1].load(screens[1].url);screens[2].load(screens[2].url);
+if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
+</script>
 </body>
 </html>
