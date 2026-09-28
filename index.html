@@ -28,7 +28,8 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
 @media (orientation:portrait) and (max-width:720px){.controls{flex-direction:column;align-items:stretch}.divider{display:none}.select-wrap{width:100%}.screens{grid-template-columns:1fr}.cta{padding:14px 36px;font-size:19px}}
 @media (orientation:landscape) and (max-width:720px){.select-wrap{width:220px}.view{min-height:150px}.cta{padding:12px 40px;font-size:18px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-.countdown{min-width:110px;text-align:center;color:var(--gold-hi);font-size:clamp(12px,1.1vw,19px);font-weight:700}.countdown.waiting{color:#fff;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.55}}\n</style>
+.countdown{min-width:110px;text-align:center;color:var(--gold-hi);font-size:clamp(12px,1.1vw,19px);font-weight:700}.countdown.waiting{color:#fff;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.55}}
+</style>
 </head>
 <body>
 <main class="app">
@@ -86,7 +87,8 @@ function createScreen(id){
 const screens={1:createScreen("1"),2:createScreen("2")};window.TheLord={screens};
 const range=$("#delay"),badge=$("#badge"),countdown=$("#countdown"),target=$("#target"),btn=$("#toggle");
 const targets=()=>target.value==="all"?[screens[1],screens[2]]:[screens[target.value]];
-function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}\nfunction showCountdown(id,seconds){let left=seconds;countdown.textContent="⏳ Tela "+id+": "+left+"s";countdown.classList.add("waiting");const timer=setInterval(()=>{left--;if(left<=0){clearInterval(timer);countdown.textContent="";countdown.classList.remove("waiting")}else countdown.textContent="⏳ Tela "+id+": "+left+"s"},1000);return timer}
+function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}
+function showCountdown(id,seconds){let left=seconds;countdown.textContent="⏳ Tela "+id+": "+left+"s";countdown.classList.add("waiting");const timer=setInterval(()=>{left--;if(left<=0){clearInterval(timer);countdown.textContent="";countdown.classList.remove("waiting")}else countdown.textContent="⏳ Tela "+id+": "+left+"s"},1000);return timer}
 function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange()}
 function syncButton(){const on=targets().every(s=>s.active);btn.classList.toggle("on",on);btn.setAttribute("aria-pressed",String(on));$("#toggle-label").textContent=on?"DESATIVAR DELAY":"ATIVAR DELAY"}
 function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton()}
