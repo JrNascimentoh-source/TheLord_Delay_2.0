@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06060a">
+<meta name="description" content="TheLord Delay 2.0">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<title>TheLord Delay 2.0</title>
+</head>
+<body>
+<main class="app">
+  <div class="titlebar" aria-hidden="true"><span>♛ ⌄</span><span class="win"><span>–</span><span>☐</span><span>✕</span></span></div>
+  <header class="header">
+    <button class="icon-btn" aria-label="Menu">☰</button>
+    <div class="brand">
+      <svg class="crown" viewBox="0 0 54 44" aria-hidden="true"><path d="M4 36L8 12l11 12L27 6l8 18 11-12 4 24Z"/><rect x="6" y="37" width="42" height="5" rx="2"/><circle cx="8" cy="10" r="3"/><circle cx="27" cy="4" r="3"/><circle cx="46" cy="10" r="3"/></svg>
+      <div class="brand-text"><b>THELORD</b><i>DELAY</i></div>
+    </div>
+    <button class="icon-btn" aria-label="Configurações">⚙</button>
+  </header>
+
+  <section class="controls">
+    <div class="field"><label for="target">APLICAR DELAY EM:</label><div class="select-wrap"><select id="target"><option value="1">Tela 1</option><option value="2">Tela 2</option><option value="all">Ambas as telas</option></select></div></div>
+    <div class="divider"></div>
+    <div class="field delay"><label for="delay">DELAY:</label><input id="delay" type="range" min="0" max="30" step="1" value="0"><div class="range-labels"><span>0s</span><span>30s</span></div></div>
+    <output class="badge" id="badge" for="delay">0s</output>
+  </section>
+
+  <section class="screens">
+    <article class="screen selected" id="screen-1" data-screen="1">
+      <div class="screen-head"><span class="flame">🔥</span><h2>TELA 1</h2><span class="dup" aria-hidden="true">▣</span></div>
+      <div class="urlbar"><span class="lock">🔒</span><input data-url="1" value="https://www.google.com" aria-label="Endereço da Tela 1"><button class="go" data-go="1">IR</button></div>
+      <div class="view" id="view-1"><div class="placeholder"><div class="g-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div><div class="search">🔍</div><p>Digite um endereço e pressione IR.</p></div><iframe title="Tela 1" hidden></iframe></div>
+      <div class="nav"><button data-nav="home" data-screen="1" aria-label="Início">⌂</button><button data-nav="back" data-screen="1" aria-label="Voltar">‹</button><button data-nav="forward" data-screen="1" aria-label="Avançar">›</button><button data-nav="reload" data-screen="1" aria-label="Recarregar">↻</button><button data-nav="refresh" data-screen="1" aria-label="Atualizar">⟳</button></div>
+    </article>
+
+    <article class="screen" id="screen-2" data-screen="2">
+      <div class="screen-head"><span class="flame">🔥</span><h2>TELA 2</h2><span class="dup" aria-hidden="true">▣</span></div>
+      <div class="urlbar"><span class="lock">🔒</span><input data-url="2" value="https://www.google.com" aria-label="Endereço da Tela 2"><button class="go" data-go="2">IR</button></div>
+      <div class="view" id="view-2"><div class="placeholder"><div class="g-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div><div class="search">🔍</div><p>Digite um endereço e pressione IR.</p></div><iframe title="Tela 2" hidden></iframe></div>
+      <div class="nav"><button data-nav="home" data-screen="2" aria-label="Início">⌂</button><button data-nav="back" data-screen="2" aria-label="Voltar">‹</button><button data-nav="forward" data-screen="2" aria-label="Avançar">›</button><button data-nav="reload" data-screen="2" aria-label="Recarregar">↻</button><button data-nav="go" data-screen="2" aria-label="Ir">IR</button></div>
+    </article>
+  </section>
+
+  <div class="cta-wrap"><button class="cta" id="toggle" aria-pressed="false"><span>♛</span><span id="toggle-label">ATIVAR DELAY</span></button></div>
+  <footer class="footer"><span>TheLord Delay</span><span>v2.0</span></footer>
+</main>
+<script src="js/storage.js"></script>
+<script src="js/browser.js"></script>
+<script src="js/delay.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
