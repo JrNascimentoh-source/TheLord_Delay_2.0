@@ -29,8 +29,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border:1px solid #ffe
 .urlbar input{flex:1;min-width:0;background:none;border:0;color:var(--txt);font-size:clamp(12px,1vw,18px);outline:none}
 .lock{color:var(--gold);font-size:13px}.go{padding:6px 12px;border:1px solid var(--gold);border-radius:var(--r-sm);color:var(--gold-text);font-weight:800;background:linear-gradient(#2a1c08,#150e04);font-size:12px;transition:.15s ease}
 .go:hover{background:linear-gradient(#3a280b,#1c1204);color:var(--gold-hi)}
-.view{flex:1;min-height:130px;border:1px solid #1d1d28;border-radius:var(--r-md);background:#0b0b12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-bottom:9px;overflow:hidden;position:relative}
-.view iframe{width:100%;height:100%;min-height:130px;border:0;background:#fff}
+[hidden]{display:none!important}.view{flex:1;min-height:130px;border:1px solid #1d1d28;border-radius:var(--r-md);background:#0b0b12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-bottom:9px;overflow:hidden;position:relative}
+.view iframe{position:absolute;inset:0;width:100%;height:100%;min-height:0;border:0;background:#fff}
 .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:var(--muted);padding:20px}
 .g-logo{font:600 clamp(24px,3.2vw,58px) "Product Sans",Arial,sans-serif;letter-spacing:-.02em}
 .g-logo span:nth-child(1),.g-logo span:nth-child(4){color:#4285f4}.g-logo span:nth-child(2),.g-logo span:nth-child(6){color:#ea4335}.g-logo span:nth-child(3){color:#fbbc05}.g-logo span:nth-child(5){color:#34a853}
