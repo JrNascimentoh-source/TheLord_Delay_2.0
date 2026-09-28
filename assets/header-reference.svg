@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 150" role="img" aria-label="TheLord Delay">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#09090e"/><stop offset="1" stop-color="#050509"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a8"/><stop offset=".28" stop-color="#ffd34f"/><stop offset=".6" stop-color="#d99518"/><stop offset="1" stop-color="#fff0a8"/></linearGradient>
+ <linearGradient id="red" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#7d0010"/><stop offset=".5" stop-color="#ff202f"/><stop offset="1" stop-color="#7d0010"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect x="2" y="2" width="1596" height="146" rx="20" fill="url(#bg)" stroke="#e0161f" stroke-width="2"/>
+<path d="M22 74 H410 L450 110" fill="none" stroke="url(#red)" stroke-width="3" filter="url(#glow)"/>
+<path d="M1150 110 L1190 74 H1578" fill="none" stroke="url(#red)" stroke-width="3" filter="url(#glow)"/>
+<path d="M450 25 H1150 M450 125 H1150" fill="none" stroke="#4b090e" stroke-width="1"/>
+<path d="M690 18 H910" stroke="#ff1e2c" stroke-width="2" filter="url(#glow)"/>
+<g transform="translate(500 18)" filter="url(#glow)">
+ <path d="M0 62 L30 8 L62 48 L100 0 L138 48 L170 8 L200 62 L172 74 L28 74 Z" fill="url(#gold)" stroke="#ffbd22" stroke-width="4"/>
+ <path d="M27 73 Q100 96 173 73 L164 104 Q100 121 36 104 Z" fill="url(#gold)" stroke="#ffbd22" stroke-width="4"/>
+ <path d="M100 15 L116 48 L100 68 L84 48 Z" fill="#e0161f" stroke="#fff0a8" stroke-width="3"/>
+ <path d="M25 54 L39 24 L51 53 M149 53 L161 24 L175 54" fill="none" stroke="#fff0a8" stroke-width="3"/>
+</g>
+<text x="720" y="91" font-family="Georgia,Times New Roman,serif" font-size="68" font-weight="700" fill="url(#gold)" stroke="#7b3c00" stroke-width="1">TheLord</text>
+<line x1="1108" y1="35" x2="1108" y2="112" stroke="#d99a25" stroke-width="2"/>
+<text x="1135" y="91" font-family="Georgia,Times New Roman,serif" font-size="68" font-weight="700" fill="#ef1f2d" stroke="#6f0710" stroke-width="1">Delay</text>
+<g fill="#f2b52d"><rect x="28" y="52" width="42" height="5" rx="2"/><rect x="28" y="70" width="42" height="5" rx="2"/><rect x="28" y="88" width="42" height="5" rx="2"/></g>
+<g transform="translate(1540 54)" fill="none" stroke="#f2b52d" stroke-width="4"><circle cx="0" cy="20" r="10"/><path d="M0 2V-4M0 44v-6M-22 20h-6M28 20h-6M-15 5l-5-5M20 40l-5-5M15 5l5-5M-20 40l5-5"/></g>
+</svg>
