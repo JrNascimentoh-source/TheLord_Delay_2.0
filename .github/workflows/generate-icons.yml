@@ -23,7 +23,7 @@ jobs:
         run: |
           python - <<'PY'
           from PIL import Image
-          src = Image.open("icon-source.jpg").convert("RGBA")
+          src = Image.open("icon-source.webp").convert("RGBA")
           for size, name in [(512, "icon-512.png"), (192, "icon-192.png"), (180, "icon-180.png")]:
               img = src.resize((size, size), Image.Resampling.LANCZOS)
               img.save(name, "PNG", optimize=True)
