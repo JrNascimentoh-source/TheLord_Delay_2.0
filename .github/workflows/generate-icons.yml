@@ -1,4 +1,5 @@
 name: Generate app icons
+# Re-run icon generation after the latest app icon update.
 
 on:
   push:
