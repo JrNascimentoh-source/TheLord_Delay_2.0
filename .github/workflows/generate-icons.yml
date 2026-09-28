@@ -1,0 +1,37 @@
+name: Generate app icons
+
+on:
+  push:
+    paths-ignore:
+      - "icon-*.png"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: pip install Pillow
+      - name: Generate PNG icons from the original app image
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          src = Image.open("icon.webp").convert("RGBA")
+          for size, name in [(512, "icon-512.png"), (192, "icon-192.png"), (180, "icon-180.png")]:
+              img = src.resize((size, size), Image.Resampling.LANCZOS)
+              img.save(name, "PNG", optimize=True)
+          PY
+      - name: Commit generated icons
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add icon-512.png icon-192.png icon-180.png
+          git diff --cached --quiet && exit 0
+          git commit -m "Generate high-resolution app icons [skip ci]"
+          git push
