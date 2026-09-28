@@ -28,7 +28,7 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
 @media (orientation:portrait) and (max-width:720px){.controls{flex-direction:column;align-items:stretch}.divider{display:none}.select-wrap{width:100%}.screens{grid-template-columns:1fr}.cta{padding:14px 36px;font-size:19px}}
 @media (orientation:landscape) and (max-width:720px){.select-wrap{width:220px}.view{min-height:150px}.cta{padding:12px 40px;font-size:18px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
+.countdown{min-width:110px;text-align:center;color:var(--gold-hi);font-size:clamp(12px,1.1vw,19px);font-weight:700}.countdown.waiting{color:#fff;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.55}}\n</style>
 </head>
 <body>
 <main class="app">
@@ -42,7 +42,7 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
 <div class="field"><label for="target">APLICAR DELAY EM:</label><div class="select-wrap"><select id="target"><option value="1">Tela 1</option><option value="2">Tela 2</option><option value="all">Ambas as telas</option></select></div></div>
 <div class="divider"></div>
 <div class="field delay"><label for="delay">DELAY:</label><input id="delay" type="range" min="0" max="60" step="1" value="0"><div class="range-labels"><span>0s</span><span>60s</span></div></div>
-<output class="badge" id="badge" for="delay">0s</output>
+<output class="badge" id="badge" for="delay">0s</output><output class="countdown" id="countdown" aria-live="polite"></output>
 </section>
 <section class="screens">
 <article class="screen selected" id="screen-1">
@@ -70,7 +70,7 @@ function createScreen(id){
   get url(){return this.history[this.index]},
   render(){this.input.value=this.url;tag.textContent=(this.active?"● ":"")+this.delay+"s";tag.classList.toggle("on",this.active)},
   load(url){root.querySelectorAll(".view>.g-logo,.view>.search").forEach(e=>e.style.display="none");this.frame.hidden=false;this.frame.src=url},
-  nav(action){const run=()=>{action();root.dispatchEvent(new CustomEvent("screen:action",{detail:{id:this.id,url:this.url,delay:this.delay,active:this.active}}))};const wait=this.active&&this.delay>0?this.delay*1000:0;wait?setTimeout(run,wait):run()},
+  nav(action){const run=()=>{action();root.dispatchEvent(new CustomEvent("screen:action",{detail:{id:this.id,url:this.url,delay:this.delay,active:this.active}}))};const wait=this.active&&this.delay>0?this.delay*1000:0;if(wait){showCountdown(this.id,this.delay);setTimeout(run,wait)}else run()},
   go(u){u=(u||"").trim();if(!u)return;if(!/^https?:\/\//i.test(u))u="https://"+u;this.nav(()=>{this.history=this.history.slice(0,this.index+1).concat(u);this.index++;this.render();this.load(u)})},
   back(){if(this.index>0)this.nav(()=>{this.index--;this.render();this.load(this.url)})},
   forward(){if(this.index<this.history.length-1)this.nav(()=>{this.index++;this.render();this.load(this.url)})},
@@ -84,9 +84,9 @@ function createScreen(id){
  s.render();return s;
 }
 const screens={1:createScreen("1"),2:createScreen("2")};window.TheLord={screens};
-const range=$("#delay"),badge=$("#badge"),target=$("#target"),btn=$("#toggle");
+const range=$("#delay"),badge=$("#badge"),countdown=$("#countdown"),target=$("#target"),btn=$("#toggle");
 const targets=()=>target.value==="all"?[screens[1],screens[2]]:[screens[target.value]];
-function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}
+function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}\nfunction showCountdown(id,seconds){let left=seconds;countdown.textContent="⏳ Tela "+id+": "+left+"s";countdown.classList.add("waiting");const timer=setInterval(()=>{left--;if(left<=0){clearInterval(timer);countdown.textContent="";countdown.classList.remove("waiting")}else countdown.textContent="⏳ Tela "+id+": "+left+"s"},1000);return timer}
 function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange()}
 function syncButton(){const on=targets().every(s=>s.active);btn.classList.toggle("on",on);btn.setAttribute("aria-pressed",String(on));$("#toggle-label").textContent=on?"DESATIVAR DELAY":"ATIVAR DELAY"}
 function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton()}
