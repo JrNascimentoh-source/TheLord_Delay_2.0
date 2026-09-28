@@ -1,0 +1,1 @@
+const TheLordStorage={key:"thelord-delay-2.0",load(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")}catch{return{}}},save(data){try{localStorage.setItem(this.key,JSON.stringify(data))}catch{}}};
