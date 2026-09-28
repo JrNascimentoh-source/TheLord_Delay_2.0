@@ -100,10 +100,10 @@ function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.c
 function toggle(){const next=!targets().every(s=>s.active);targets().forEach(s=>{s.active=next;s.render()});syncButton()}
 function readStore(key){try{return JSON.parse(localStorage.getItem(key)||"[]")}catch(e){return[]}}
 function writeStore(key,value){localStorage.setItem(key,JSON.stringify(value))}
-function currentConfig(){return{delay:+range.value,target:target.value,active:screens[1].active||screens[2].active}}
-function currentLayout(){return{url1:screens[1].url,url2:screens[2].url,delay:+range.value,target:target.value,active:screens[1].active||screens[2].active}}
-function applyConfig(item){range.value=item.delay??0;target.value=item.target||"1";screens[1].delay=+range.value;screens[2].delay=+range.value;screens[1].active=!!item.active;screens[2].active=!!item.active;onTarget();screens[1].render();screens[2].render()}
-function applyLayout(item){applyConfig(item);screens[1].go(item.url1||HOMES[1]);screens[2].go(item.url2||HOMES[2])}
+function currentConfig(){return{delay:+range.value,target:target.value,active1:screens[1].active,active2:screens[2].active}}
+function currentLayout(){return{url1:screens[1].url,url2:screens[2].url,delay:+range.value,target:target.value,active1:screens[1].active,active2:screens[2].active}}
+function applyConfig(item){range.value=item.delay??0;target.value=item.target||"1";screens[1].delay=+range.value;screens[2].delay=+range.value;screens[1].active=item.active1??!!item.active;screens[2].active=item.active2??!!item.active;onTarget();screens[1].render();screens[2].render()}
+function applyLayout(item){const a1=screens[1].active,a2=screens[2].active;screens[1].active=false;screens[2].active=false;screens[1].go(item.url1||HOMES[1]);screens[2].go(item.url2||HOMES[2]);screens[1].active=item.active1??!!item.active;screens[2].active=item.active2??!!item.active;screens[1].render();screens[2].render();applyConfig(item)}
 function askName(label){return window.prompt("Nome para "+label+":","Minha "+label)}
 function saveConfig(){const name=askName("configuração");if(!name)return;const list=readStore(STORAGE.configs);list.unshift({id:Date.now(),name,createdAt:new Date().toISOString(),...currentConfig()});writeStore(STORAGE.configs,list.slice(0,30));openModal("Configurações salvas")}
 function saveLayout(){const name=askName("layout");if(!name)return;const list=readStore(STORAGE.layouts);list.unshift({id:Date.now(),name,createdAt:new Date().toISOString(),...currentLayout()});writeStore(STORAGE.layouts,list.slice(0,30));openModal("Layouts salvos")}
