@@ -1,5 +1,6 @@
 (function(){
   "use strict";
+
   const TYPE_CONFIG="THELORD_DELAY_CONFIG";
   const TYPE_DATA="THELORD_DELAY_DATA";
   const TYPE_DELIVERED="THELORD_DELAYED_DATA";
@@ -18,28 +19,42 @@
     }catch(e){ return ""; }
   }
 
+  function now(){
+    return Date.now();
+  }
+
+  function getDelayMs(screen){
+    return screen && screen.active
+      ? Math.max(0,Number(screen.delay)||0)*1000
+      : 0;
+  }
+
   function postConfig(id){
     const screen=getScreen(id);
     if(!screen || !screen.frame || !screen.frame.contentWindow) return false;
+
     const origin=getOrigin(screen);
     if(!origin || origin==="null") return false;
+
     screen.frame.contentWindow.postMessage({
       type:TYPE_CONFIG,
       version:1,
       screenId:String(id),
       active:!!screen.active,
-      delayMs:Math.max(0,Number(screen.delay)||0)*1000
+      delayMs:getDelayMs(screen)
     },origin);
+
     return true;
   }
 
   function deliver(id,item){
     const screen=getScreen(id);
     if(!screen || !screen.frame || !screen.frame.contentWindow) return;
+
     const origin=getOrigin(screen);
     if(!origin || origin==="null") return;
 
-    const deliveredAt=Date.now();
+    const deliveredAt=now();
     screen.frame.contentWindow.postMessage({
       type:TYPE_DELIVERED,
       version:1,
@@ -64,23 +79,30 @@
     const key=String(id);
     const list=queues.get(key)||[];
     const oldTimer=timers.get(key);
+
     if(oldTimer){
       clearTimeout(oldTimer);
       timers.delete(key);
     }
+
     if(!list.length) return;
 
     const item=list[0];
-    const wait=Math.max(0,item.dueAt-Date.now());
+    const wait=Math.max(0,item.dueAt-now());
+
     const timer=setTimeout(function(){
       timers.delete(key);
+
       const current=queues.get(key)||[];
       if(current.length && current[0]===item){
         current.shift();
+
         if(current.length) queues.set(key,current);
         else queues.delete(key);
+
         deliver(key,item);
       }
+
       schedule(key);
     },wait);
 
@@ -92,31 +114,77 @@
     if(!screen) return false;
 
     const key=String(id);
-    const now=Date.now();
-    const stamp=Number(receivedAt)||now;
-    const delayMs=screen.active ? Math.max(0,Number(screen.delay)||0)*1000 : 0;
+    const received=Number(receivedAt)||now();
+    const delayMs=getDelayMs(screen);
+
     const item={
       payload,
-      receivedAt:stamp,
-      sequence:now,
-      dueAt:stamp+delayMs
+      receivedAt:received,
+      sequence:now(),
+      dueAt:received+delayMs
     };
 
     const list=queues.get(key)||[];
     list.push(item);
-    list.sort(function(a,b){
-      return a.dueAt-b.dueAt || a.sequence-b.sequence;
-    });
-    queues.set(key,list);
 
+    /*
+     * Preserve chronological order of the source stream.
+     * When several packets share the same timestamp, sequence keeps
+     * their arrival order deterministic.
+     */
+    list.sort(function(a,b){
+      return a.dueAt-b.dueAt || a.receivedAt-b.receivedAt || a.sequence-b.sequence;
+    });
+
+    queues.set(key,list);
     schedule(key);
     return true;
+  }
+
+  /*
+   * Public ingestion point for a cooperative data adapter.
+   * A same-origin page, an authorized relay, or a cooperative iframe
+   * can call:
+   *   window.TheLordDelayBridge.ingest(2, payload, receivedAt)
+   *
+   * This function does not inspect or alter the source data. It only
+   * timestamps, queues and releases it according to the selected delay.
+   */
+  function ingest(id,payload,receivedAt){
+    return enqueue(String(id),payload,receivedAt);
+  }
+
+  /*
+   * If the user changes the delay while packets are already buffered,
+   * rebase only the still-pending packets. This keeps the selected
+   * delay deterministic instead of leaving a mixture of old/new offsets.
+   */
+  function rebase(id){
+    const key=String(id);
+    const screen=getScreen(key);
+    const list=queues.get(key)||[];
+    if(!screen || !list.length) return;
+
+    const delayMs=getDelayMs(screen);
+
+    list.forEach(function(item){
+      item.dueAt=item.receivedAt+delayMs;
+    });
+
+    list.sort(function(a,b){
+      return a.dueAt-b.dueAt || a.receivedAt-b.receivedAt || a.sequence-b.sequence;
+    });
+
+    queues.set(key,list);
+    schedule(key);
   }
 
   function clear(id){
     const key=String(id);
     const timer=timers.get(key);
+
     if(timer) clearTimeout(timer);
+
     timers.delete(key);
     queues.delete(key);
   }
@@ -153,6 +221,8 @@
     sync,
     syncAll,
     enqueue,
+    ingest,
+    rebase,
     clear,
     pending:function(id){
       return (queues.get(String(id))||[]).length;
