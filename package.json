@@ -7,7 +7,8 @@
     "test:temporal": "node tools/temporal-test-producer.mjs",
     "start:relay": "node tools/temporal-relay.mjs",
     "start:capture-test": "node tools/temporal-capture-test-source.mjs",
-    "test:temporal:pipeline": "node tools/temporal-pipeline-selftest.mjs"
+    "test:temporal:pipeline": "node tools/temporal-pipeline-selftest.mjs",
+    "test:temporal:e2e": "npm run test:temporal:pipeline"
   },
   "dependencies": {
     "ws": "^8.18.3"
