@@ -23,7 +23,11 @@ function leave(socket){
 
 wss.on("connection",socket=>{
   send(socket,{type:"ready",version:1});
-  socket.on("message",raw=>{
+  socket.on("message",(raw,isBinary)=>{
+    if(isBinary){
+      for(const peer of members(socket.channel)) if(peer!==socket && peer.readyState===1) peer.send(raw,{binary:true});
+      return;
+    }
     let msg;
     try{msg=JSON.parse(raw.toString());}catch(e){return send(socket,{type:"error",code:"INVALID_JSON"});}
     if(!msg||typeof msg!=="object") return;
