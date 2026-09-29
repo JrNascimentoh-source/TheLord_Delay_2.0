@@ -10,8 +10,8 @@ ws.on("open",()=>{
   console.log("producer conectado",url,channel);
   setInterval(()=>{
     const receivedAt=Date.now();
-    const payload={source:"local-test",sequence:n++,value:1+(n%40)/10};
-    ws.send(JSON.stringify({type:"data",channel,receivedAt,payload}));
+    const payload=Buffer.from(JSON.stringify({source:"local-test",sequence:n++,value:1+(n%40)/10}),"utf8");
+    ws.send(payload);
   },interval);
 });
 ws.on("message",raw=>console.log("relay:",raw.toString()));
