@@ -129,6 +129,20 @@ range.addEventListener("input",onSlider);target.addEventListener("change",onTarg
 if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
 </script>
 <script src="./js/delay-bridge.js?v=3"></script>
-<script src="./js/temporal-adapter.js?v=1"></script>
+<script src="./js/temporal-decoder.js?v=1"></script>
+<script src="./js/temporal-adapter.js?v=2"></script>
+<script>
+(function(){
+  const p=new URLSearchParams(location.search);
+  const relay=p.get("temporalRelay");
+  if(!relay) return;
+  const channel=p.get("temporalChannel")||"aviator-test";
+  const screenId=p.get("temporalScreen")||"2";
+  try{
+    window.TheLordTemporalAdapter.connect({url:relay,channel,screenId});
+    window.dispatchEvent(new CustomEvent("thelord:temporal-test-mode",{detail:{relay,channel,screenId}}));
+  }catch(error){console.error("TheLord temporal adapter:",error)}
+})();
+</script>
 </body>
 </html>
