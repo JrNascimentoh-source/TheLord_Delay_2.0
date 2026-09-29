@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node tools/temporal-relay.mjs",
     "test:temporal": "node tools/temporal-test-producer.mjs",
-    "start:relay": "node tools/temporal-relay.mjs"
+    "start:relay": "node tools/temporal-relay.mjs",
+    "start:capture-test": "node tools/temporal-capture-test-source.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"
