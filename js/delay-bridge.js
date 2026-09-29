@@ -154,6 +154,13 @@
     return enqueue(String(id),payload,receivedAt);
   }
 
+  function deliverNow(id,payload,receivedAt){
+    const key=String(id);
+    if(!getScreen(key)) return false;
+    deliver(key,{payload,receivedAt:Number(receivedAt)||now()});
+    return true;
+  }
+
   /*
    * If the user changes the delay while packets are already buffered,
    * rebase only the still-pending packets. This keeps the selected
@@ -222,6 +229,7 @@
     syncAll,
     enqueue,
     ingest,
+    deliverNow,
     rebase,
     clear,
     pending:function(id){
