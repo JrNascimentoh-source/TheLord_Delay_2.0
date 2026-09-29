@@ -1,42 +1,76 @@
 # TheLord_Delay_2.0
 
-TheLord Delay 2.0 é a nova base web do projeto. A arquitetura foi iniciada do zero para abandonar a implementação Java/APK e seguir o modelo de aplicação web responsiva usado no TheLord_Aviator.
+Aplicação web responsiva para apresentar o mesmo fluxo de dados em duas telas, permitindo aplicar um atraso temporal independente em cada tela.
 
-## Base visual
+## Fluxo temporal
 
-A interface foi montada a partir da referência do Claude: identidade escura, contornos e brilho vermelho, dourado metálico, cartões arredondados, painel de controle, duas telas e CTA central.
+fonte cooperativa → relay temporal → Tela 1 / Tela 2
 
-### Comportamento inicial
+- O relay recebe os frames sem alterar o conteúdo.
+- Cada tela se conecta ao mesmo canal.
+- Cada conexão possui seu próprio delayMs.
+- delayMs: 0 entrega em tempo real.
+- A outra tela pode receber o mesmo frame alguns segundos depois.
+- A ordem dos frames é preservada.
+- O atraso máximo do relay é 60 segundos.
+- Trocar o delay enquanto há frames pendentes recalcula a fila para o novo valor.
 
-- Seleção do alvo: Tela 1, Tela 2 ou ambas.
-- Delay configurável de 0 a 30 segundos.
-- Indicador do valor atualizado em tempo real.
-- Botão ATIVAR DELAY / DESATIVAR DELAY.
-- Seleção visual das telas atingidas pelo delay.
-- Duas áreas de navegador responsivas.
-- Navegação por endereço, início, voltar, avançar e recarregar.
-- Persistência local das configurações do delay.
-- Base PWA com manifest e service worker.
+Isso é um mecanismo de apresentação temporal. Ele não prevê resultados, não fabrica dados e não transforma uma fonte em outra.
 
-## Estrutura
+## Interface
 
-`index.html`
-`css/theme.css`
-`css/layout.css`
-`css/components.css`
-`js/app.js`
-`js/delay.js`
-`js/browser.js`
-`js/storage.js`
-`manifest.json`
-`sw.js`
+1. Escolha Tela 1, Tela 2 ou Ambas as telas.
+2. Ajuste o slider de 0s a 60s.
+3. Pressione ATIVAR DELAY.
+4. A tela selecionada recebe o atraso escolhido; a outra permanece em 0s.
+5. Em Configurações gerais, informe a URL do relay e o canal.
+6. A configuração do relay fica salva no navegador e é reconectada automaticamente quando a aplicação abre.
 
-## Limitação importante do navegador
+Exemplo de relay local: ws://127.0.0.1:8787/stream
 
-As telas usam iframe para apresentar páginas externas. Um site pode impedir a incorporação por X-Frame-Options ou CSP. Isso é uma proteção do navegador e não pode ser removido pelo JavaScript desta aplicação.
+Canal padrão: aviator
 
-O delay implementado nesta etapa atua sobre as navegações acionadas pelos próprios controles do TheLord Delay. Ele não intercepta tráfego, scripts ou conteúdo de terceiros.
+## Relay
 
-## Próximas etapas
+Instalação:
 
-Esta é a base de trabalho do projeto. A partir dela podemos ajustar visual, comportamento e recursos sem voltar para Java/APK.
+```bash
+npm install
+npm start
+```
+
+Por padrão: ws://127.0.0.1:8787/stream
+
+Variáveis opcionais: PORT, HOST e TEMPORAL_DEFAULT_DELAY_MS.
+
+O atraso por tela pode ser enviado no comando subscribe como delayMs.
+
+## Testes
+
+Teste completo do pipeline temporal:
+
+```bash
+npm run test:temporal:e2e
+```
+
+Teste com 3 segundos:
+
+```bash
+TEMPORAL_DELAY_MS=3000 npm run test:temporal:e2e
+```
+
+O teste verifica simultaneamente uma tela em tempo real e outra atrasada, confirmando que os bytes dos frames continuam idênticos.
+
+## Fonte de dados
+
+A fonte precisa fornecer os dados ao relay de forma tecnicamente permitida e compatível com o protocolo definido. O navegador não pode ser usado para remover proteções de iframe, CSP ou X-Frame-Options.
+
+O adaptador temporal suporta frames WebSocket binários e JSON. Quando o frame é binário, o decoder só o transforma em payload semântico quando existe um decodificador explícito para aquele formato.
+
+O projeto inclui uma extensão de captura para ambiente local de teste em tools/temporal-capture-extension/. Ela permanece restrita a localhost/127.0.0.1.
+
+## Estado atual
+
+A parte de relay → duas telas → delay independente → fila temporal → entrega está implementada.
+
+A única integração que depende da fonte é o fornecimento legítimo dos frames e, quando necessário, o decodificador específico do protocolo da fonte.
