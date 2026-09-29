@@ -78,7 +78,18 @@ wss.on("connection",socket=>{
       const channel=String(msg.channel||socket.channel||"default");
       const receivedAt=Number(msg.receivedAt)||Date.now();
       const packet={type:"data",channel,receivedAt,payload:msg.payload};
-      for(const peer of members(channel)) send(peer,packet);
+      for(const peer of members(channel)){
+        if(peer===socket||peer.readyState!==1) continue;
+        const delayMs=normalizeDelay(peer.delayMs);
+        const version=peer.subscriptionVersion;
+        const targetChannel=channel;
+        if(delayMs===0){send(peer,packet);continue;}
+        setTimeout(()=>{
+          if(peer.readyState===1&&peer.channel===targetChannel&&peer.subscriptionVersion===version){
+            send(peer,packet);
+          }
+        },delayMs);
+      }
     }
   });
 
