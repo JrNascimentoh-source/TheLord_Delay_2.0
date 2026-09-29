@@ -74,7 +74,7 @@ function createScreen(id){
  const s={id,root,input,frame,delay:0,active:false,history:[HOMES[id]],index:0,
   get url(){return this.history[this.index]},
   render(){this.input.value=this.url;tag.textContent=(this.active?"● ":"")+this.delay+"s";tag.classList.toggle("on",this.active)},
-  load(url){root.querySelectorAll(".view>.g-logo,.view>.search").forEach(e=>e.style.display="none");this.frame.hidden=false;this.frame.src=url},
+  load(url){root.querySelectorAll(".view>.g-logo,.view>.search").forEach(e=>e.style.display="none");this.frame.hidden=false;this.frame.src=url;window.TheLordDelayBridge?.sync?.(id)},
   nav(action){const run=()=>{action();root.dispatchEvent(new CustomEvent("screen:action",{detail:{id:this.id,url:this.url,delay:this.delay,active:this.active}}))};const wait=this.active&&this.delay>0?this.delay*1000:0;if(wait)setTimeout(run,wait);else run()},
   go(u){u=(u||"").trim();if(!u)return;if(!/^https?:\/\//i.test(u))u="https://"+u;this.nav(()=>{this.history=this.history.slice(0,this.index+1).concat(u);this.index++;this.render();this.load(u)})},
   back(){if(this.index>0)this.nav(()=>{this.index--;this.render();this.load(this.url)})},
@@ -82,7 +82,7 @@ function createScreen(id){
   reload(){this.nav(()=>{this.render();if(this.frame.src)this.frame.src=this.frame.src})},
   home(){this.go(HOMES[id])}
  };
- bHome.onclick=()=>s.home();bBack.onclick=()=>s.back();bFwd.onclick=()=>s.forward();bReload.onclick=()=>s.reload();
+ bHome.onclick=()=>s.home();bBack.onclick=()=>s.back();bFwd.onclick=()=>s.forward();bReload.onclick=()=>s.reload();frame.addEventListener("load",()=>window.TheLordDelayBridge?.sync?.(id));
  bLast.onclick=()=>s.go(input.value);
  $(".urlbar .go",root).onclick=()=>s.go(input.value);
  input.addEventListener("keydown",e=>{if(e.key==="Enter")s.go(input.value)});
@@ -94,15 +94,15 @@ const menuBtn=$("#menuBtn"),menuPanel=$("#menuPanel"),modalBackdrop=$("#modalBac
 const STORAGE={configs:"thelord_delay_configs",layouts:"thelord_delay_layouts",settings:"thelord_delay_settings"};
 const targets=()=>target.value==="all"?[screens[1],screens[2]]:[screens[target.value]];
 function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}
-function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange()}
+function syncDelayBridge(){window.TheLordDelayBridge?.syncAll?.()}\nfunction onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange();syncDelayBridge()}
 function syncButton(){const on=targets().every(s=>s.active);btn.classList.toggle("on",on);btn.setAttribute("aria-pressed",String(on));$("#toggle-label").textContent=on?"DESATIVAR DELAY":"ATIVAR DELAY"}
-function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton()}
-function toggle(){const selected=targets();const next=!selected.every(s=>s.active);selected.forEach(s=>{s.active=next;s.render()});syncButton();if(next){selected.forEach(s=>{s.reload()})}}
+function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton();syncDelayBridge()}
+function toggle(){const selected=targets();const next=!selected.every(s=>s.active);selected.forEach(s=>{s.active=next;s.render()});syncButton();syncDelayBridge();if(next){selected.forEach(s=>{s.reload()})}}
 function readStore(key){try{return JSON.parse(localStorage.getItem(key)||"[]")}catch(e){return[]}}
 function writeStore(key,value){localStorage.setItem(key,JSON.stringify(value))}
 function currentConfig(){return{delay:+range.value,target:target.value,active1:screens[1].active,active2:screens[2].active}}
 function currentLayout(){return{url1:screens[1].url,url2:screens[2].url,delay:+range.value,target:target.value,active1:screens[1].active,active2:screens[2].active}}
-function applyConfig(item){range.value=item.delay??0;target.value=item.target||"1";screens[1].delay=+range.value;screens[2].delay=+range.value;screens[1].active=item.active1??!!item.active;screens[2].active=item.active2??!!item.active;onTarget();screens[1].render();screens[2].render()}
+function applyConfig(item){range.value=item.delay??0;target.value=item.target||"1";screens[1].delay=+range.value;screens[2].delay=+range.value;screens[1].active=item.active1??!!item.active;screens[2].active=item.active2??!!item.active;onTarget();screens[1].render();screens[2].render();syncDelayBridge()}
 function applyLayout(item){const a1=screens[1].active,a2=screens[2].active;screens[1].active=false;screens[2].active=false;screens[1].go(item.url1||HOMES[1]);screens[2].go(item.url2||HOMES[2]);screens[1].active=item.active1??!!item.active;screens[2].active=item.active2??!!item.active;screens[1].render();screens[2].render();applyConfig(item)}
 function askName(label){return new Promise(resolve=>{modalTitle.textContent="Salvar "+label;modalBody.innerHTML='<div class="modal-message">Digite um nome para identificar este layout.</div><input class="modal-input" id="saveNameInput" type="text" maxlength="60" value="Meu layout" placeholder="Nome do layout"><div class="modal-actions"><button class="secondary" id="saveNameCancel">Cancelar</button><button id="saveNameOk">SALVAR</button></div>';modalBackdrop.classList.add("open");const input=$("#saveNameInput");input.focus();input.select();$("#saveNameCancel").onclick=()=>{closeModal();resolve("")};$("#saveNameOk").onclick=()=>{const name=input.value.trim();if(!name){input.focus();return}closeModal();resolve(name)};input.addEventListener("keydown",e=>{if(e.key==="Enter")$("#saveNameOk").click();if(e.key==="Escape")$("#saveNameCancel").click()})})}
 async function saveConfig(){const name=await askName("configuração");if(!name)return;const list=readStore(STORAGE.configs);list.unshift({id:Date.now(),name,createdAt:new Date().toISOString(),...currentConfig()});writeStore(STORAGE.configs,list.slice(0,30));openModal("Configurações salvas")}
@@ -127,5 +127,5 @@ saveConfigBtn.onclick=saveLayout;
 range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);onTarget();
 if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
 </script>
-</body>
+<script src="./js/delay-bridge.js?v=1"></script>\n</body>
 </html>
