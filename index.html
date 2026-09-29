@@ -94,7 +94,8 @@ const menuBtn=$("#menuBtn"),menuPanel=$("#menuPanel"),modalBackdrop=$("#modalBac
 const STORAGE={configs:"thelord_delay_configs",layouts:"thelord_delay_layouts",settings:"thelord_delay_settings"};
 const targets=()=>target.value==="all"?[screens[1],screens[2]]:[screens[target.value]];
 function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}
-function syncDelayBridge(){window.TheLordDelayBridge?.syncAll?.()}\nfunction onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange();syncDelayBridge()}
+function syncDelayBridge(){window.TheLordDelayBridge?.syncAll?.()}
+function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange();syncDelayBridge()}
 function syncButton(){const on=targets().every(s=>s.active);btn.classList.toggle("on",on);btn.setAttribute("aria-pressed",String(on));$("#toggle-label").textContent=on?"DESATIVAR DELAY":"ATIVAR DELAY"}
 function onTarget(){range.value=targets()[0].delay;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton();syncDelayBridge()}
 function toggle(){const selected=targets();const next=!selected.every(s=>s.active);selected.forEach(s=>{s.active=next;s.render()});syncButton();syncDelayBridge();if(next){selected.forEach(s=>{s.reload()})}}
