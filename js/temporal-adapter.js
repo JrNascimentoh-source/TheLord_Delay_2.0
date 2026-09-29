@@ -1,96 +1,39 @@
 (function(){
   "use strict";
-
   const bridge=()=>window.TheLordDelayBridge;
   const decoder=()=>window.TheLordTemporalDecoder;
-  const state={socket:null,connected:false,screenId:null,url:"",channel:"",delayMs:0,lastError:"",frames:0,decoded:0,binary:0};
-
-  function close(){
-    if(state.socket){try{state.socket.close();}catch(e){}}
-    state.socket=null;
-    state.connected=false;
+  const sockets=new Map(), states=new Map();
+  function stateFor(id){id=String(id);if(!states.has(id))states.set(id,{socket:null,connected:false,screenId:id,url:"",channel:"",delayMs:0,lastError:"",frames:0,decoded:0,binary:0});return states.get(id)}
+  function close(id){
+    if(id===undefined||id===null){[...sockets.keys()].forEach(close);return}
+    id=String(id);const ws=sockets.get(id);if(ws){try{ws.close()}catch(e){}}
+    sockets.delete(id);const s=stateFor(id);s.socket=null;s.connected=false;
   }
-
-  async function handle(event){
-    let result;
-    try{
-      result=await decoder().decode(event.data,{screenId:state.screenId,channel:state.channel});
-    }catch(error){
-      state.lastError=String(error&&error.message||error);
-      return;
-    }
-
-    state.frames++;
-    if(result.kind==="binary") state.binary++;
-
+  async function handle(id,event){
+    const s=stateFor(id);let result;
+    try{result=await decoder().decode(event.data,{screenId:s.screenId,channel:s.channel})}
+    catch(error){s.lastError=String(error&&error.message||error);return}
+    s.frames++;if(result.kind==="binary")s.binary++;
     if(result.kind==="decoded"||result.kind==="json"){
-      state.decoded++;
-      const receivedAt=Date.now();
-      bridge().ingest(state.screenId,result.payload,receivedAt);
-      window.dispatchEvent(new CustomEvent("thelord:temporal-source-data",{
-        detail:{screenId:state.screenId,channel:state.channel,delayMs:state.delayMs,payload:result.payload,receivedAt,kind:result.kind}
-      }));
-      return;
+      s.decoded++;const receivedAt=Date.now();bridge().ingest(s.screenId,result.payload,receivedAt);
+      window.dispatchEvent(new CustomEvent("thelord:temporal-source-data",{detail:{screenId:s.screenId,channel:s.channel,delayMs:s.delayMs,payload:result.payload,receivedAt,kind:result.kind}}));return;
     }
-
-    window.dispatchEvent(new CustomEvent("thelord:temporal-binary-frame",{
-      detail:{screenId:state.screenId,channel:state.channel,delayMs:state.delayMs,result}
-    }));
+    window.dispatchEvent(new CustomEvent("thelord:temporal-binary-frame",{detail:{screenId:s.screenId,channel:s.channel,delayMs:s.delayMs,result}}));
   }
-
   function connect(options){
-    options=options||{};
-    close();
-
-    const url=String(options.url||"").trim();
-    const screenId=String(options.screenId||2);
-    const channel=String(options.channel||"default");
-    const delayMs=Math.max(0,Math.floor(Number(options.delayMs||0)));
-
-    if(!url) throw new Error("Temporal adapter: URL do relay não informada.");
-    if(!bridge()||!decoder()) throw new Error("Temporal adapter: pipeline ainda não está pronto.");
-
-    const ws=new WebSocket(url);
-    ws.binaryType="arraybuffer";
-
-    state.socket=ws;
-    state.screenId=screenId;
-    state.url=url;
-    state.channel=channel;
-    state.delayMs=delayMs;
-    state.lastError="";
-    state.frames=0;
-    state.decoded=0;
-    state.binary=0;
-
-    ws.addEventListener("open",()=>{
-      state.connected=true;
-      ws.send(JSON.stringify({type:"subscribe",channel,screenId,delayMs}));
-      window.dispatchEvent(new CustomEvent("thelord:temporal-adapter",{
-        detail:{type:"open",screenId,channel,delayMs}
-      }));
-    });
-
-    ws.addEventListener("message",handle);
-    ws.addEventListener("error",()=>{
-      state.lastError="WebSocket error";
-      window.dispatchEvent(new CustomEvent("thelord:temporal-adapter",{
-        detail:{type:"error",screenId,channel,delayMs}
-      }));
-    });
-    ws.addEventListener("close",()=>{
-      state.connected=false;
-      window.dispatchEvent(new CustomEvent("thelord:temporal-adapter",{
-        detail:{type:"close",screenId,channel,delayMs}
-      }));
-    });
-
+    options=options||{};const id=String(options.screenId||2);close(id);
+    const url=String(options.url||"").trim(),channel=String(options.channel||"default"),delayMs=Math.max(0,Math.floor(Number(options.delayMs||0)));
+    if(!url)throw new Error("Temporal adapter: URL do relay não informada.");
+    if(!bridge()||!decoder())throw new Error("Temporal adapter: pipeline ainda não está pronto.");
+    const s=stateFor(id),ws=new WebSocket(url);ws.binaryType="arraybuffer";s.socket=ws;s.screenId=id;s.url=url;s.channel=channel;s.delayMs=delayMs;s.lastError="";s.frames=0;s.decoded=0;s.binary=0;sockets.set(id,ws);
+    ws.addEventListener("open",()=>{s.connected=true;ws.send(JSON.stringify({type:"subscribe",channel,screenId:id,delayMs}));window.dispatchEvent(new CustomEvent("thelord:temporal-adapter",{detail:{type:"open",screenId:id,channel,delayMs}}))});
+    ws.addEventListener("message",event=>handle(id,event));
+    ws.addEventListener("error",()=>{s.lastError="WebSocket error";window.dispatchEvent(new CustomEvent("thelord:temporal-adapter",{detail:{type:"error",screenId:id,channel,delayMs}}))});
+    ws.addEventListener("close",()=>{s.connected=false;if(sockets.get(id)===ws)sockets.delete(id);window.dispatchEvent(new CustomEvent("thelord:temporal-adapter",{detail:{type:"close",screenId:id,channel,delayMs}}))});
     return true;
   }
-
-  function ingest(screenId,payload,receivedAt){
-    return bridge()?bridge().ingest(String(screenId),payload,receivedAt):false;
-  }
-
-  window.TheLordTemporalAdapter={version:3,connect,close,ingest,status:()=>({...state})};
+  function connectScreens(options){options=options||{};(options.screenIds||[1,2]).forEach(id=>connect({...options,screenId:id}));return true}
+  function ingest(id,payload,receivedAt){return bridge()?bridge().ingest(String(id),payload,receivedAt):false}
+  function status(id){if(id===undefined||id===null){const out={};states.forEach((v,k)=>out[k]={...v,socket:undefined});return out}return {...stateFor(id),socket:undefined}}
+  window.TheLordTemporalAdapter={version:4,connect,connectScreens,close,ingest,status};
 })();
