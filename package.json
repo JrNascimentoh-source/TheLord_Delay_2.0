@@ -1,0 +1,7 @@
+{
+  "name":"thelord-delay-temporal-relay",
+  "private":true,
+  "type":"module",
+  "scripts":{"start":"node tools/temporal-relay.mjs"},
+  "dependencies":{"ws":"^8.18.3"}
+}
