@@ -23,6 +23,6 @@ const server=http.createServer((req,res)=>{
   res.end(html);
 });
 const wss=new WebSocketServer({port:wsPort,path:"/source"});
-wss.on("connection",socket=>socket.on("message",()=>{}));
+wss.on("connection",socket=>socket.on("message",(raw,isBinary)=>{if(socket.readyState===1)socket.send(raw,{binary:isBinary});}));
 server.listen(httpPort,"127.0.0.1",()=>console.log("HTTP test source: http://127.0.0.1:"+httpPort+"/?thelordCapture=1"));
 console.log("WebSocket test source: ws://127.0.0.1:"+wsPort+"/source");
