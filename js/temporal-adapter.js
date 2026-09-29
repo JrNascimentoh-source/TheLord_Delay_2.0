@@ -15,7 +15,7 @@
     catch(error){s.lastError=String(error&&error.message||error);return}
     s.frames++;if(result.kind==="binary")s.binary++;
     if(result.kind==="decoded"||result.kind==="json"){
-      s.decoded++;const receivedAt=Date.now();bridge().ingest(s.screenId,result.payload,receivedAt);
+      s.decoded++;const receivedAt=Date.now();(bridge().deliverNow||bridge().ingest)(s.screenId,result.payload,receivedAt);
       window.dispatchEvent(new CustomEvent("thelord:temporal-source-data",{detail:{screenId:s.screenId,channel:s.channel,delayMs:s.delayMs,payload:result.payload,receivedAt,kind:result.kind}}));return;
     }
     window.dispatchEvent(new CustomEvent("thelord:temporal-binary-frame",{detail:{screenId:s.screenId,channel:s.channel,delayMs:s.delayMs,result}}));
