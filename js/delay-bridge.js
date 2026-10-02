@@ -21,8 +21,14 @@
 
   function now(){ return Date.now(); }
 
+  function isSelected(id){
+    const target=document.getElementById("target");
+    if(!target) return true;
+    return target.value==="all" || String(target.value)===String(id);
+  }
+
   function getDelayMs(screen){
-    return screen && screen.active
+    return screen && screen.active && isSelected(screen.id)
       ? Math.max(0,Number(screen.delay)||0)*1000
       : 0;
   }
