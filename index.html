@@ -103,23 +103,25 @@ const range=$("#delay"),badge=$("#badge"),target=$("#target"),btn=$("#toggle");
 const menuBtn=$("#menuBtn"),menuPanel=$("#menuPanel"),modalBackdrop=$("#modalBackdrop"),modalTitle=$("#modalTitle"),modalBody=$("#modalBody"),modalClose=$("#modalClose"),saveConfigBtn=$("#saveConfig");
 const STORAGE={configs:"thelord_delay_configs",layouts:"thelord_delay_layouts",settings:"thelord_delay_settings"};
 const targets=()=>target.value==="all"?[screens[1],screens[2]]:[screens[target.value]];
+window.__theLordHookStatus={};
 function updateDiagnostics(){
  const p=window.TheLordSourceProbe?.snapshot?.()||{frames:{},events:[]};
  const t=window.TheLordTemporalAdapter?.status?.()||{};
  [1,2].forEach(id=>{
-   const s=t[id]||{}, f=p.frames[String(id)]||{};
+   const s=t[id]||{}, f=p.frames[String(id)]||{}, hook=window.__theLordHookStatus[id];
    const selected=["all",String(id)].includes(target.value);
    const delay=(screens[id].active&&selected)?screens[id].delay:0;
    const lines=[
-    "WebSocket: "+(s.connected?"CONECTADO":(f.blocked?"BLOQUEADO (cross-origin)":"não detectado")),
+    hook?.hooked ? "WebSocket: HOOK ATIVO" : "WebSocket: "+(s.connected?"CONECTADO":(f.blocked?"BLOQUEADO (cross-origin)":"não detectado")),
     "Frames: "+(s.frames||0)+"  •  Decodificados: "+(s.decoded||0),
     "Delay aplicado: "+delay+"s  •  Pendentes: "+(window.TheLordDelayBridge?.pending?.(id)||0),
-    "Endpoint: "+(f.url||s.url||"aguardando fonte")
+    "Endpoint: "+(f.url||s.url||hook?.href||"aguardando fonte")
    ];
+   if(hook?.hooked) lines.push("Hook: "+(Number(hook.delayMs||0)/1000)+"s • "+(hook.host||"7a7"));
    const el=$("#diag"+id);if(el)el.textContent=lines.join("\n");
  });
  const relay=window.__TheLordTemporalRelay;
- const src=$("#diagSource");if(src)src.textContent=relay?"Relay: "+relay.url+" • canal: "+(relay.channel||"aviator"):"Fonte temporal: nenhum relay configurado";
+ const src=$("#diagSource");if(src)src.textContent=Object.values(window.__theLordHookStatus).some(x=>x?.hooked)?"Captura de WebSocket da página: ativa":(relay?"Relay: "+relay.url+" • canal: "+(relay.channel||"aviator"):"Fonte temporal: nenhum relay configurado");
 }
 function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}
 function syncDelayBridge(){window.TheLordDelayBridge?.syncAll?.();[1,2].forEach(id=>window.TheLordDelayBridge?.rebase?.(id))}
@@ -157,7 +159,7 @@ saveConfigBtn.onclick=saveLayout;
 range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);onTarget();
 setInterval(updateDiagnostics,1000);
 window.addEventListener("thelord:source-event",updateDiagnostics);
-window.addEventListener("message",e=>{const d=e.data;if(!d||d.source!=="thelord-delay-network")return;for(const id of [1,2]){const s=screens[id];if(!s||!s.frame||e.source!==s.frame.contentWindow)continue;const el=$("#diag"+id);if(!el)continue;const status=d.delayMs>0?"HOOK ATIVO • "+(Number(d.delayMs)/1000)+"s":"HOOK ATIVO • 0s";el.textContent=el.textContent+"\\n"+status;const src=$("#diagSource");if(src)src.textContent="Captura de WebSocket da página: ativa";}});
+window.addEventListener("message",e=>{const d=e.data;if(!d||d.source!=="thelord-delay-network"||!d.hooked)return;const id=String(d.screenId||"");if(id!=="1"&&id!=="2")return;window.__theLordHookStatus[id]=d;updateDiagnostics();});
 $("#diagRefresh")?.addEventListener("click",updateDiagnostics);
 setTimeout(updateDiagnostics,500);
 if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
