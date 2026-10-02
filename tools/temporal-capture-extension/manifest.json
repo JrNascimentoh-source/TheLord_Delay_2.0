@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TheLord Delay — Network Delay",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Aplica atraso temporal somente na entrega das mensagens WebSocket recebidas pela página selecionada, sem alterar os dados.",
   "permissions": [
     "storage"
