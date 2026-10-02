@@ -1,4 +1,5 @@
 name: Temporal pipeline
+# CI temporal principal — sem cache npm para não exigir lockfile
 
 on:
   push:
