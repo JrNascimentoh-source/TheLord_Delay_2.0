@@ -140,7 +140,7 @@ async function saveLayout(){const name=await askName("layout");if(!name)return;c
 function openConfirmClear(){modalTitle.textContent="Confirmar exclusão";modalBody.innerHTML='<div class="modal-message">Tem certeza que deseja apagar todas as configurações e layouts salvos?</div><div class="modal-actions"><button class="secondary" id="clearCancel">Cancelar</button><button id="clearOk" style="border-color:var(--red);color:#ffb0b0">APAGAR</button></div>';modalBackdrop.classList.add("open");$("#clearCancel").onclick=closeModal;$("#clearOk").onclick=()=>{localStorage.removeItem(STORAGE.configs);localStorage.removeItem(STORAGE.layouts);openModal("settings")}}
 function openModal(type){
  modalBody.innerHTML="";
- if(type==="settings"){modalTitle.textContent="Configurações gerais";modalBody.innerHTML='<div class="settings-line"><div><span>Iniciar sempre no Google</span><small>Ao abrir o aplicativo, as duas telas começam na página inicial do Google. O usuário escolhe a plataforma em cada tela.</small></div><input id="startGoogle" type="checkbox" checked></div><div class="settings-line"><div><span>Manter dados salvos neste aparelho</span><small>Permite guardar configurações e layouts no navegador.</small></div><input id="keepData" type="checkbox" checked></div><button class="danger" id="clearSaved">Apagar todas as configurações e layouts salvos</button>';$("#startGoogle").addEventListener("change",e=>localStorage.setItem(STORAGE.settings,JSON.stringify({startGoogle:e.target.checked})));const relayCfg=JSON.parse(localStorage.getItem("thelord_temporal_relay")||"{}");$("#relayUrl").value=relayCfg.url||"";$("#relayChannel").value=relayCfg.channel||"aviator";$("#relayConnect").addEventListener("click",()=>{const url=$("#relayUrl").value.trim();const channel=$("#relayChannel").value.trim()||"aviator";if(!url){$("#relayStatus").textContent="Informe a URL do relay.";return}window.__TheLordTemporalRelay={url,channel};localStorage.setItem("thelord_temporal_relay",JSON.stringify({url,channel}));syncTemporalRelay(true);$("#relayStatus").textContent="Relay conectado: "+channel});$("#relayDisconnect").addEventListener("click",()=>{window.__TheLordTemporalRelay=null;window.TheLordTemporalAdapter?.close();localStorage.removeItem("thelord_temporal_relay");$("#relayStatus").textContent="Desconectado"});$("#clearSaved").addEventListener("click",()=>{openConfirmClear()})}
+ if(type==="settings"){modalTitle.textContent="Configurações gerais";modalBody.innerHTML='<div class="settings-line"><div><span>Iniciar sempre no Google</span><small>Ao abrir o aplicativo, as duas telas começam na página inicial do Google. O usuário escolhe a plataforma em cada tela.</small></div><input id="startGoogle" type="checkbox" checked></div><div class="settings-line"><div><span>Manter dados salvos neste aparelho</span><small>Permite guardar configurações e layouts no navegador.</small></div><input id="keepData" type="checkbox" checked></div><button class="danger" id="clearSaved">Apagar todas as configurações e layouts salvos</button>';$("#startGoogle").addEventListener("change",e=>localStorage.setItem(STORAGE.settings,JSON.stringify({startGoogle:e.target.checked})));$("#clearSaved").addEventListener("click",()=>{openConfirmClear()})}
  else if(type==="configs"){modalTitle.textContent="Configurações salvas";const list=readStore(STORAGE.configs);if(!list.length){modalBody.innerHTML='<div class="modal-empty">Nenhuma configuração salva ainda.</div>'}else{modalBody.innerHTML='<div class="saved-list">'+list.map(x=>'<div class="saved-row"><div class="saved-info"><strong>'+escapeHtml(x.name)+'</strong><small>Delay: '+x.delay+'s • '+(x.target==="all"?"Ambas as telas":"Tela "+x.target)+'</small></div><button data-apply-config="'+x.id+'">APLICAR</button><button data-del-config="'+x.id+'">×</button></div>').join("")+'</div>';modalBody.querySelectorAll("[data-apply-config]").forEach(b=>b.onclick=()=>{const item=list.find(x=>x.id==b.dataset.applyConfig);if(item){applyConfig(item);closeModal()}});modalBody.querySelectorAll("[data-del-config]").forEach(b=>b.onclick=()=>{writeStore(STORAGE.configs,list.filter(x=>x.id!=b.dataset.delConfig));openModal("configs")})}}
  else {modalTitle.textContent="Layouts salvos";const list=readStore(STORAGE.layouts);const preset={id:"preset-7a7",name:LAYOUT_7A7.name,createdAt:"preset",url1:LAYOUT_7A7.url1,url2:LAYOUT_7A7.url2,delay:0,target:"1",active1:false,active2:false};const rows=[preset,...list];modalBody.innerHTML='<div class="save-form"><button id="saveLayoutNow">＋ Salvar layout atual</button></div><div class="saved-list">'+rows.map(x=>'<div class="saved-row"><div class="saved-info"><strong>'+escapeHtml(x.name)+'</strong><small>Tela 1: '+escapeHtml(x.url1)+' • Tela 2: '+escapeHtml(x.url2)+'</small></div><button data-apply-layout="'+x.id+'">APLICAR</button>'+(x.id==="preset-7a7"?'':'<button data-del-layout="'+x.id+'">×</button>')+'</div>').join("")+'</div>';$("#saveLayoutNow").onclick=saveLayout;modalBody.querySelectorAll("[data-apply-layout]").forEach(b=>b.onclick=()=>{const item=rows.find(x=>x.id==b.dataset.applyLayout);if(item){closeModal();applyLayout(item)}});modalBody.querySelectorAll("[data-del-layout]").forEach(b=>b.onclick=()=>{writeStore(STORAGE.layouts,list.filter(x=>x.id!=b.dataset.delLayout));openModal("layouts")})}
  modalBackdrop.classList.add("open");
@@ -164,24 +164,7 @@ if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(r
 <script src="./js/source-probe.js?v=1"></script>
 <script src="./js/delay-bridge.js?v=4"></script>
 <script src="./js/temporal-decoder.js?v=1"></script>
-<script src="./js/temporal-adapter.js?v=6"></script>
-<script>
-(function(){
-  const p=new URLSearchParams(location.search);
-  const relay=p.get("temporalRelay");
-  if(!relay) return;
-  const channel=p.get("temporalChannel")||"aviator-test";
-  const screenId=p.get("temporalScreen")||"2";
-  window.__TheLordTemporalRelay={url:relay,channel};localStorage.setItem("thelord_temporal_relay",JSON.stringify({url:relay,channel}));
-  try{
-    const delayMs=Number(p.get("temporalDelayMs")||0);
-    window.TheLordTemporalAdapter.connect({url:relay,channel,screenId,delayMs});
-    window.dispatchEvent(new CustomEvent("thelord:temporal-test-mode",{detail:{relay,channel,screenId,delayMs}}));
-  }catch(error){console.error("TheLord temporal adapter:",error)}
-})();
-</script>
-<script>
-(function(){const cfg=JSON.parse(localStorage.getItem("thelord_temporal_relay")||"{}");if(cfg.url){window.__TheLordTemporalRelay={url:cfg.url,channel:cfg.channel||"aviator"};setTimeout(()=>syncTemporalRelay(true),0)}})();
-</script>
+
+
 </body>
 </html>
