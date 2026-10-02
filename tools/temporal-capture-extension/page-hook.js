@@ -3,8 +3,8 @@
 
   /*
    * Network-like delay for the selected external page.
-   * The bytes/data are never changed: only delivery to WebSocket listeners
-   * is postponed, exactly like extra network latency.
+   * The payload/event is never changed: only delivery to page listeners
+   * is postponed.
    */
   const host = location.hostname;
   const supported =
@@ -15,36 +15,35 @@
   if (!supported) return;
 
   let delayMs = 0;
+  let screenId = "";
   const listenerMap = new WeakMap();
+  const handlerMap = new WeakMap();
+
   const originalAdd = WebSocket.prototype.addEventListener;
   const originalRemove = WebSocket.prototype.removeEventListener;
-  const nativeOnMessage = Object.getOwnPropertyDescriptor(WebSocket.prototype, "onmessage");
+  const nativeOnMessage = Object.getOwnPropertyDescriptor(
+    WebSocket.prototype,
+    "onmessage"
+  );
 
   function normalizeDelay(value) {
     const n = Number(value);
     return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
   }
 
-  function currentDelay() {
-    return delayMs;
+  function callListener(listener, socket, event) {
+    if (typeof listener === "function") return listener.call(socket, event);
+    if (listener && typeof listener.handleEvent === "function") {
+      return listener.handleEvent.call(listener, event);
+    }
   }
 
   function deliver(listener, socket, event) {
-    const wait = currentDelay();
-    if (wait <= 0) {
-      if (typeof listener === "function") return listener.call(socket, event);
-      if (listener && typeof listener.handleEvent === "function") {
-        return listener.handleEvent.call(listener, event);
-      }
-      return;
-    }
+    const wait = delayMs;
+    if (wait <= 0) return callListener(listener, socket, event);
 
     setTimeout(() => {
-      if (typeof listener === "function") {
-        listener.call(socket, event);
-      } else if (listener && typeof listener.handleEvent === "function") {
-        listener.handleEvent.call(listener, event);
-      }
+      callListener(listener, socket, event);
     }, wait);
   }
 
@@ -69,62 +68,84 @@
     }
 
     const map = listenerMap.get(this) || [];
-    const entry = map.find(item => item.listener === listener);
-    if (!entry) return originalRemove.call(this, type, listener, options);
+    const matches = map.filter(item => item.listener === listener);
 
-    const result = originalRemove.call(this, type, entry.wrapped, options);
-    const index = map.indexOf(entry);
-    if (index >= 0) map.splice(index, 1);
-    return result;
+    if (!matches.length) {
+      return originalRemove.call(this, type, listener, options);
+    }
+
+    for (const item of matches) {
+      originalRemove.call(this, type, item.wrapped, options);
+      const index = map.indexOf(item);
+      if (index >= 0) map.splice(index, 1);
+    }
   };
 
   if (nativeOnMessage && nativeOnMessage.get && nativeOnMessage.set) {
-    const handlerState = new WeakMap();
-
     Object.defineProperty(WebSocket.prototype, "onmessage", {
-      configurable: true,
+      configurable: nativeOnMessage.configurable,
       enumerable: nativeOnMessage.enumerable,
       get() {
-        return handlerState.get(this) || null;
+        const state = handlerMap.get(this);
+        return state ? state.handler : nativeOnMessage.get.call(this);
       },
       set(handler) {
-        const previous = handlerState.get(this);
+        const previous = handlerMap.get(this);
         if (previous) {
-          const oldWrapped = previous.wrapped;
-          originalRemove.call(this, "message", oldWrapped);
+          originalRemove.call(this, "message", previous.wrapped);
+          handlerMap.delete(this);
         }
 
         if (typeof handler !== "function") {
-          handlerState.delete(this);
-          nativeOnMessage.set.call(this, null);
-          return;
+          return nativeOnMessage.set.call(this, handler);
         }
 
         const wrapped = event => deliver(handler, this, event);
-        handlerState.set(this, {handler, wrapped});
+        handlerMap.set(this, {handler, wrapped});
         nativeOnMessage.set.call(this, wrapped);
       }
     });
   }
 
+  function broadcastConfig(data) {
+    try {
+      for (const frame of Array.from(window.frames)) {
+        frame.postMessage(data, "*");
+      }
+    } catch {}
+  }
+
   window.addEventListener("message", event => {
-    if (event.source !== window.parent) return;
     const data = event.data;
     if (!data || data.type !== "THELORD_DELAY_CONFIG") return;
 
+    /*
+     * The parent app may target an iframe that itself contains the
+     * actual 7a7 page. Accept the configuration from an ancestor frame
+     * and propagate it to child frames.
+     */
     delayMs = normalizeDelay(data.delayMs);
-    window.postMessage({
+    screenId = String(data.screenId || "");
+
+    const status = {
       source: "thelord-delay-network",
-      version: 1,
+      version: 2,
       delayMs,
-      screenId: String(data.screenId || "")
-    }, "*");
+      screenId,
+      host: location.hostname,
+      href: location.href
+    };
+
+    window.postMessage(status, "*");
+    broadcastConfig(data);
   });
 
   window.postMessage({
     source: "thelord-delay-network",
-    version: 1,
+    version: 2,
     delayMs: 0,
-    screenId: ""
+    screenId: "",
+    host: location.hostname,
+    href: location.href
   }, "*");
 })();
