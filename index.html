@@ -154,7 +154,11 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMenu();closeMo
 menuPanel.querySelector('[data-menu="settings"]').onclick=()=>{closeMenu();openModal("settings")};
 menuPanel.querySelector('[data-menu="layouts"]').onclick=()=>{closeMenu();openModal("layouts")};
 saveConfigBtn.onclick=saveLayout;
-range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);onTarget();\nsetInterval(updateDiagnostics,1000);\nwindow.addEventListener("thelord:source-event",updateDiagnostics);\n$("#diagRefresh")?.addEventListener("click",updateDiagnostics);\nsetTimeout(updateDiagnostics,500);
+range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);onTarget();
+setInterval(updateDiagnostics,1000);
+window.addEventListener("thelord:source-event",updateDiagnostics);
+$("#diagRefresh")?.addEventListener("click",updateDiagnostics);
+setTimeout(updateDiagnostics,500);
 if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
 </script>
 <script src="./js/source-probe.js?v=1"></script>
