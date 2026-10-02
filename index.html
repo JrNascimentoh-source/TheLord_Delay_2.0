@@ -75,7 +75,11 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;
 <script>
 const $=(s,r=document)=>r.querySelector(s);
 const GOOGLE_HOME="https://www.google.com";
-const LAYOUT_7A7={name:"Layout = 7a7",url1:"https://7a7bb.com/main/inicio?pid=2619439266&fromPage=AGENCY_ONE&_ts===gMyUCO1gDMyUDM0YDM5cTMyITJ",url2:"https://7a7bb.com/main/inicio?pid=2619439266&fromPage=AGENCY_ONE&_ts===gMyUCO1gDMyUDM0YDM5cTMyITJ"};
+const LAYOUT_7A7={
+  name:"Layout = 7a7",
+  url1:"https://7a7bb.com/main/inicio?pid=2619439266&fromPage=AGENCY_ONE&_ts===gMyUCO1gDMyUDM0YDM5cTMyITJ",
+  url2:"https://7a7bb.com/main/inicio?pid=2619439266&fromPage=AGENCY_ONE&_ts===gMyUCO1gDMyUDM0YDM5cTMyITJ"
+};
 const HOMES={1:GOOGLE_HOME,2:GOOGLE_HOME};
 function createScreen(id){
  const root=$("#screen-"+id),input=$(".urlbar input",root),frame=$(".screen-frame",root);
