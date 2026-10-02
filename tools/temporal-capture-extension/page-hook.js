@@ -18,6 +18,7 @@
   let screenId = "";
   const listenerMap = new WeakMap();
   const handlerMap = new WeakMap();
+  const NativeWebSocket = window.WebSocket;
 
   const originalAdd = WebSocket.prototype.addEventListener;
   const originalRemove = WebSocket.prototype.removeEventListener;
@@ -47,7 +48,7 @@
     }, wait);
   }
 
-  WebSocket.prototype.addEventListener = function(type, listener, options) {
+  NativeWebSocket.prototype.addEventListener = function(type, listener, options) {
     if (type !== "message" || !listener) {
       return originalAdd.call(this, type, listener, options);
     }
@@ -62,7 +63,7 @@
     return originalAdd.call(this, type, wrapped, options);
   };
 
-  WebSocket.prototype.removeEventListener = function(type, listener, options) {
+  NativeWebSocket.prototype.removeEventListener = function(type, listener, options) {
     if (type !== "message" || !listener) {
       return originalRemove.call(this, type, listener, options);
     }
@@ -82,7 +83,7 @@
   };
 
   if (nativeOnMessage && nativeOnMessage.get && nativeOnMessage.set) {
-    Object.defineProperty(WebSocket.prototype, "onmessage", {
+    Object.defineProperty(NativeWebSocket.prototype, "onmessage", {
       configurable: nativeOnMessage.configurable,
       enumerable: nativeOnMessage.enumerable,
       get() {
@@ -107,6 +108,36 @@
     });
   }
 
+  try {
+    const WrappedWebSocket = new Proxy(NativeWebSocket, {
+      construct(target, args, newTarget) {
+        return Reflect.construct(target, args, newTarget);
+      },
+      apply(target, thisArg, args) {
+        return Reflect.apply(target, thisArg, args);
+      }
+    });
+    WrappedWebSocket.prototype = NativeWebSocket.prototype;
+    window.WebSocket = WrappedWebSocket;
+  } catch {}
+
+  function postStatus(extra = {}) {
+    const status = {
+      source: "thelord-delay-network",
+      version: 3,
+      delayMs,
+      screenId,
+      host: location.hostname,
+      href: location.href,
+      hooked: true,
+      ...extra
+    };
+    try { window.postMessage(status, "*"); } catch {}
+    try {
+      if (window.top && window.top !== window) window.top.postMessage(status, "*");
+    } catch {}
+  }
+
   function broadcastConfig(data) {
     try {
       for (const frame of Array.from(window.frames)) {
@@ -127,25 +158,9 @@
     delayMs = normalizeDelay(data.delayMs);
     screenId = String(data.screenId || "");
 
-    const status = {
-      source: "thelord-delay-network",
-      version: 2,
-      delayMs,
-      screenId,
-      host: location.hostname,
-      href: location.href
-    };
-
-    window.postMessage(status, "*");
+    postStatus({configured: true});
     broadcastConfig(data);
   });
 
-  window.postMessage({
-    source: "thelord-delay-network",
-    version: 2,
-    delayMs: 0,
-    screenId: "",
-    host: location.hostname,
-    href: location.href
-  }, "*");
+  postStatus({configured: false});
 })();
