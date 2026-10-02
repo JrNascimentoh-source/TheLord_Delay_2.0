@@ -121,10 +121,71 @@
     window.WebSocket = WrappedWebSocket;
   } catch {}
 
+  // Some games receive their realtime stream inside a Worker/SharedWorker
+  // and forward frames to the page with postMessage. Delay that delivery too.
+  function patchMessageTarget(proto, label) {
+    if (!proto || proto.__theLordMessagePatched) return;
+    const add = proto.addEventListener;
+    const remove = proto.removeEventListener;
+    if (typeof add !== "function" || typeof remove !== "function") return;
+
+    const maps = new WeakMap();
+    proto.addEventListener = function(type, listener, options) {
+      if (type !== "message" || !listener) return add.call(this, type, listener, options);
+      const wrapped = event => deliver(listener, this, event);
+      let list = maps.get(this);
+      if (!list) { list = []; maps.set(this, list); }
+      list.push({listener, wrapped, options});
+      return add.call(this, type, wrapped, options);
+    };
+    proto.removeEventListener = function(type, listener, options) {
+      if (type !== "message" || !listener) return remove.call(this, type, listener, options);
+      const list = maps.get(this) || [];
+      const matches = list.filter(x => x.listener === listener);
+      if (!matches.length) return remove.call(this, type, listener, options);
+      for (const item of matches) {
+        remove.call(this, type, item.wrapped, options);
+        const i = list.indexOf(item);
+        if (i >= 0) list.splice(i, 1);
+      }
+    };
+
+    const desc = Object.getOwnPropertyDescriptor(proto, "onmessage");
+    if (desc && desc.get && desc.set) {
+      Object.defineProperty(proto, "onmessage", {
+        configurable: desc.configurable,
+        enumerable: desc.enumerable,
+        get() {
+          const state = maps.get(this)?.find(x => x.onmessage);
+          return state ? state.listener : desc.get.call(this);
+        },
+        set(handler) {
+          const list = maps.get(this) || [];
+          for (const item of list.filter(x => x.onmessage)) {
+            remove.call(this, "message", item.wrapped);
+            const i = list.indexOf(item);
+            if (i >= 0) list.splice(i, 1);
+          }
+          if (typeof handler !== "function") return desc.set.call(this, handler);
+          const wrapped = event => deliver(handler, this, event);
+          list.push({listener: handler, wrapped, onmessage: true});
+          maps.set(this, list);
+          return desc.set.call(this, wrapped);
+        }
+      });
+    }
+    try { Object.defineProperty(proto, "__theLordMessagePatched", {value: label}); } catch {}
+  }
+
+  try { patchMessageTarget(Worker && Worker.prototype, "Worker"); } catch {}
+  try { patchMessageTarget(SharedWorker && SharedWorker.prototype.port?.constructor?.prototype, "SharedWorker"); } catch {}
+  try { patchMessageTarget(MessagePort && MessagePort.prototype, "MessagePort"); } catch {}
+  try { patchMessageTarget(ServiceWorkerContainer && ServiceWorkerContainer.prototype, "ServiceWorker"); } catch {}
+
   function postStatus(extra = {}) {
     const status = {
       source: "thelord-delay-network",
-      version: 3,
+      version: 4,
       delayMs,
       screenId,
       host: location.hostname,
