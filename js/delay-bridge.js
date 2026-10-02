@@ -30,16 +30,21 @@
   function postConfig(id){
     const screen=getScreen(id);
     if(!screen || !screen.frame || !screen.frame.contentWindow) return false;
-    const origin=getOrigin(screen);
-    if(!origin || origin==="null") return false;
+    if(!screen.frame.contentWindow) return false;
 
+    /*
+     * The iframe may redirect after navigation. Using its initial src origin
+     * here can silently discard the configuration when the final document
+     * lives on another allowed 7a7 subdomain. The page-hook validates the
+     * message shape and propagates it to nested matching frames.
+     */
     screen.frame.contentWindow.postMessage({
       type:TYPE_CONFIG,
       version:1,
       screenId:String(id),
       active:!!screen.active,
       delayMs:getDelayMs(screen)
-    },origin);
+    },"*");
     return true;
   }
 
