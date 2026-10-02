@@ -19,9 +19,7 @@
     }catch(e){ return ""; }
   }
 
-  function now(){
-    return Date.now();
-  }
+  function now(){ return Date.now(); }
 
   function getDelayMs(screen){
     return screen && screen.active
@@ -32,7 +30,6 @@
   function postConfig(id){
     const screen=getScreen(id);
     if(!screen || !screen.frame || !screen.frame.contentWindow) return false;
-
     const origin=getOrigin(screen);
     if(!origin || origin==="null") return false;
 
@@ -43,16 +40,14 @@
       active:!!screen.active,
       delayMs:getDelayMs(screen)
     },origin);
-
     return true;
   }
 
   function deliver(id,item){
     const screen=getScreen(id);
-    if(!screen || !screen.frame || !screen.frame.contentWindow) return;
-
+    if(!screen || !screen.frame || !screen.frame.contentWindow) return false;
     const origin=getOrigin(screen);
-    if(!origin || origin==="null") return;
+    if(!origin || origin==="null") return false;
 
     const deliveredAt=now();
     screen.frame.contentWindow.postMessage({
@@ -73,6 +68,7 @@
         delayMs:Math.max(0,deliveredAt-item.receivedAt)
       }
     }));
+    return true;
   }
 
   function schedule(id){
@@ -96,10 +92,8 @@
       const current=queues.get(key)||[];
       if(current.length && current[0]===item){
         current.shift();
-
         if(current.length) queues.set(key,current);
         else queues.delete(key);
-
         deliver(key,item);
       }
 
@@ -110,12 +104,22 @@
   }
 
   function enqueue(id,payload,receivedAt){
-    const screen=getScreen(id);
+    const key=String(id);
+    const screen=getScreen(key);
     if(!screen) return false;
 
-    const key=String(id);
     const received=Number(receivedAt)||now();
     const delayMs=getDelayMs(screen);
+
+    /*
+     * Critical performance path:
+     * realtime screens never enter the temporal queue. This keeps the
+     * normal stream at realtime speed and reserves queue/timer work for
+     * screens that actually have an active delay.
+     */
+    if(delayMs<=0){
+      return deliver(key,{payload,receivedAt:received});
+    }
 
     const item={
       payload,
@@ -126,12 +130,6 @@
 
     const list=queues.get(key)||[];
     list.push(item);
-
-    /*
-     * Preserve chronological order of the source stream.
-     * When several packets share the same timestamp, sequence keeps
-     * their arrival order deterministic.
-     */
     list.sort(function(a,b){
       return a.dueAt-b.dueAt || a.receivedAt-b.receivedAt || a.sequence-b.sequence;
     });
@@ -141,15 +139,6 @@
     return true;
   }
 
-  /*
-   * Public ingestion point for a cooperative data adapter.
-   * A same-origin page, an authorized relay, or a cooperative iframe
-   * can call:
-   *   window.TheLordDelayBridge.ingest(2, payload, receivedAt)
-   *
-   * This function does not inspect or alter the source data. It only
-   * timestamps, queues and releases it according to the selected delay.
-   */
   function ingest(id,payload,receivedAt){
     return enqueue(String(id),payload,receivedAt);
   }
@@ -157,22 +146,23 @@
   function deliverNow(id,payload,receivedAt){
     const key=String(id);
     if(!getScreen(key)) return false;
-    deliver(key,{payload,receivedAt:Number(receivedAt)||now()});
-    return true;
+    return deliver(key,{payload,receivedAt:Number(receivedAt)||now()});
   }
 
-  /*
-   * If the user changes the delay while packets are already buffered,
-   * rebase only the still-pending packets. This keeps the selected
-   * delay deterministic instead of leaving a mixture of old/new offsets.
-   */
   function rebase(id){
     const key=String(id);
     const screen=getScreen(key);
     const list=queues.get(key)||[];
-    if(!screen || !list.length) return;
+    if(!screen) return;
 
     const delayMs=getDelayMs(screen);
+
+    if(delayMs<=0){
+      clear(key);
+      return;
+    }
+
+    if(!list.length) return;
 
     list.forEach(function(item){
       item.dueAt=item.receivedAt+delayMs;
@@ -189,20 +179,13 @@
   function clear(id){
     const key=String(id);
     const timer=timers.get(key);
-
     if(timer) clearTimeout(timer);
-
     timers.delete(key);
     queues.delete(key);
   }
 
-  function sync(id){
-    return postConfig(String(id));
-  }
-
-  function syncAll(){
-    [1,2].forEach(sync);
-  }
+  function sync(id){ return postConfig(String(id)); }
+  function syncAll(){ [1,2].forEach(sync); }
 
   window.addEventListener("message",function(event){
     const screens=(window.TheLord&&window.TheLord.screens)||{};
@@ -224,7 +207,7 @@
   });
 
   window.TheLordDelayBridge={
-    version:1,
+    version:2,
     sync,
     syncAll,
     enqueue,
@@ -232,14 +215,8 @@
     deliverNow,
     rebase,
     clear,
-    pending:function(id){
-      return (queues.get(String(id))||[]).length;
-    },
-    types:{
-      config:TYPE_CONFIG,
-      data:TYPE_DATA,
-      delivered:TYPE_DELIVERED
-    }
+    pending:function(id){ return (queues.get(String(id))||[]).length; },
+    types:{config:TYPE_CONFIG,data:TYPE_DATA,delivered:TYPE_DELIVERED}
   };
 
   window.dispatchEvent(new Event("thelord:delay-bridge-ready"));
