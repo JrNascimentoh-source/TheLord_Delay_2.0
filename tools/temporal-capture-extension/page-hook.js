@@ -27,6 +27,31 @@
   const socketCaptureInstalled = new WeakSet();
   const delayedEvents = new WeakSet();
   const NativeWebSocket = window.WebSocket;
+  const websocketConstructors = new WeakSet();
+  let activeWebSocketConstructor = NativeWebSocket;
+
+  function makeWebSocketProxy(Constructor) {
+    if (typeof Constructor !== "function") return Constructor;
+    if (websocketConstructors.has(Constructor)) return Constructor;
+    websocketConstructors.add(Constructor);
+
+    try {
+      const proxy = new Proxy(Constructor, {
+        construct(target, args, newTarget) {
+          const socket = Reflect.construct(target, args, newTarget);
+          installSocketCapture(socket);
+          return socket;
+        },
+        apply(target, thisArg, args) {
+          return Reflect.apply(target, thisArg, args);
+        }
+      });
+      try { proxy.prototype = Constructor.prototype; } catch {}
+      return proxy;
+    } catch {
+      return Constructor;
+    }
+  }
 
   const originalAdd = WebSocket.prototype.addEventListener;
   const originalRemove = WebSocket.prototype.removeEventListener;
@@ -176,19 +201,44 @@
   }
 
   try {
-    const WrappedWebSocket = new Proxy(NativeWebSocket, {
-      construct(target, args, newTarget) {
-        const socket = Reflect.construct(target, args, newTarget);
-        installSocketCapture(socket);
-        return socket;
-      },
-      apply(target, thisArg, args) {
-        return Reflect.apply(target, thisArg, args);
-      }
-    });
-    WrappedWebSocket.prototype = NativeWebSocket.prototype;
-    window.WebSocket = WrappedWebSocket;
+    activeWebSocketConstructor = makeWebSocketProxy(NativeWebSocket);
+    window.WebSocket = activeWebSocketConstructor;
+
+    /*
+     * The game may install unified-hook.js or another compatibility layer
+     * that replaces window.WebSocket after document_start. Keep the hook
+     * attached to the constructor actually exposed to the page.
+     */
+    const descriptor = Object.getOwnPropertyDescriptor(window, "WebSocket");
+    if (descriptor && descriptor.configurable) {
+      let exposed = activeWebSocketConstructor;
+      Object.defineProperty(window, "WebSocket", {
+        configurable: descriptor.configurable,
+        enumerable: descriptor.enumerable,
+        get() { return exposed; },
+        set(next) {
+          exposed = makeWebSocketProxy(next);
+          activeWebSocketConstructor = exposed;
+        }
+      });
+    }
   } catch {}
+
+  function watchWebSocketConstructor() {
+    try {
+      const current = window.WebSocket;
+      if (typeof current === "function" && current !== activeWebSocketConstructor) {
+        activeWebSocketConstructor = makeWebSocketProxy(current);
+        if (window.WebSocket !== activeWebSocketConstructor) {
+          try { window.WebSocket = activeWebSocketConstructor; } catch {}
+        }
+        postStatus({webSocketRehooked:true});
+      }
+    } catch {}
+  }
+
+  // Covers late replacements by the game's own unified-hook.js.
+  try { setInterval(watchWebSocketConstructor, 100); } catch {}
 
   // Some games receive their realtime stream inside a Worker/SharedWorker
   // and forward frames to the page with postMessage. Delay that delivery too.
@@ -254,7 +304,7 @@
   function postStatus(extra = {}) {
     const status = {
       source: "thelord-delay-network",
-      version: 7,
+      version: 8,
       delayMs,
       screenId,
       configured,
@@ -263,6 +313,8 @@
       hooked: true,
       capturedCount,
       deliveredCount,
+      websocketConstructor: typeof window.WebSocket === "function",
+      aviatorSocketPath: "/parties/main/aviator",
       ...extra
     };
     try { window.postMessage(status, "*"); } catch {}
