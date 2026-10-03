@@ -132,7 +132,7 @@ function setNetworkThrottle(enabled){
  networkThrottleBtn?.classList.toggle("on",networkThrottleActive);
  networkThrottleBtn?.setAttribute("aria-pressed",String(networkThrottleActive));
  networkThrottleBtn?.title=networkThrottleActive?"Redutor Aviator ATIVO — clique para desligar":"Teste de rede: clique para aplicar no próximo WebSocket do Aviator";
- if(networkThrottleActive)screens[2].reload();
+
 }
 
 function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange();syncDelayBridge();syncTemporalRelay()}
@@ -165,7 +165,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMenu();closeMo
 menuPanel.querySelector('[data-menu="settings"]').onclick=()=>{closeMenu();openModal("settings")};
 menuPanel.querySelector('[data-menu="layouts"]').onclick=()=>{closeMenu();openModal("layouts")};
 saveConfigBtn.onclick=saveLayout;
-range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);networkThrottleBtn?.addEventListener("click",()=>setNetworkThrottle(!networkThrottleActive));window.addEventListener("message",e=>{const d=e.data;if(d?.source==="thelord-temporal-capture"&&d?.kind==="network-throttle-result"&&!d.result?.ok){networkThrottleActive=false;networkThrottleBtn?.classList.remove("on");console.warn("Teste de rede:",d.result?.error)}});onTarget();
+range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);networkThrottleBtn?.addEventListener("click",()=>setNetworkThrottle(!networkThrottleActive));window.addEventListener("message",e=>{const d=e.data;if(d?.source==="thelord-temporal-capture"&&d?.kind==="network-throttle-result"){if(!d.result?.ok){networkThrottleActive=false;networkThrottleBtn?.classList.remove("on");console.warn("Teste de rede:",d.result?.error)}else if(d.result.enabled){screens[2].reload()}}});onTarget();
 setInterval(updateDiagnostics,1000);
 window.addEventListener("thelord:source-event",updateDiagnostics);
 window.addEventListener("message",e=>{const d=e.data;if(!d||d.source!=="thelord-delay-network"||!d.hooked)return;const id=String(d.screenId||"");if(id!=="1"&&id!=="2")return;window.__theLordHookStatus[id]=d;updateDiagnostics();});
