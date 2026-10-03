@@ -7,6 +7,17 @@
     if(event.source!==window||event.origin!==location.origin)return;
     const data=event.data;
     if(!data||data.source!==PREFIX||data.version!==1)return;
+    if(data.kind==="network-throttle"){
+      chrome.runtime.sendMessage({
+        type:"THELORD_NETWORK_THROTTLE",
+        enabled:!!data.enabled
+      }).then(result=>{
+        window.postMessage({source:PREFIX,version:1,kind:"network-throttle-result",result},"*");
+      }).catch(error=>{
+        window.postMessage({source:PREFIX,version:1,kind:"network-throttle-result",result:{ok:false,error:String(error.message||error)}},"*");
+      });
+      return;
+    }
     if(data.kind==="binary"&&data.data instanceof ArrayBuffer){
       chrome.runtime.sendMessage({
         type:"THELORD_CAPTURE_BINARY",
