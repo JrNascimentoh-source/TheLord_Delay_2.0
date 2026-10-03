@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TheLord Delay — Network Delay",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Aplica atraso temporal somente na entrega das mensagens WebSocket recebidas pela página selecionada, sem alterar os dados.",
   "permissions": [
     "storage"
@@ -14,9 +14,11 @@
     "https://7a7bb.com/*",
     "https://*.7a7bb.com/*",
     "https://7a711.com/*",
+    "https://*.7a711.com/*",
     "https://7a7.vip/*",
     "https://*.7a7.vip/*",
-    "https://game.r-o-4-m.com/*"
+    "https://game.r-o-4-m.com/*",
+    "https://*.game.r-o-4-m.com/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -32,9 +34,11 @@
         "https://7a7bb.com/*",
         "https://*.7a7bb.com/*",
         "https://7a711.com/*",
+        "https://*.7a711.com/*",
         "https://7a7.vip/*",
         "https://*.7a7.vip/*",
-        "https://game.r-o-4-m.com/*"
+        "https://game.r-o-4-m.com/*",
+        "https://*.game.r-o-4-m.com/*"
       ],
       "js": [
         "bridge.js"
