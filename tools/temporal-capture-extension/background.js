@@ -172,7 +172,7 @@ function makeHookExpression(delayMs,screenId){
     +'function dispatch(ws,event){let copy;try{copy=new MessageEvent("message",{data:event.data,origin:event.origin||"",lastEventId:event.lastEventId||"",source:event.source||null,ports:event.ports||[]});}catch{copy=event;}delayed.add(copy);state.delivered++;try{ws.dispatchEvent(copy);}catch{}}'
     +'function pump(ws){const q=queues.get(ws);if(!q||q.busy||!q.items.length)return;q.busy=true;const item=q.items.shift();q.bytes=Math.max(0,q.bytes-item.bytes);const rate=Math.max(1,(state.bandwidthKbps*1000)/8);const now=performance.now();const start=Math.max(now,q.nextAt||now);const wait=Math.max(0,start-now);q.nextAt=start+(item.bytes/rate)*1000;state.throttledBytes+=item.bytes;setTimeout(()=>{dispatch(ws,item.event);q.busy=false;pump(ws);},wait);}'
     +'function enqueue(ws,event){let q=queues.get(ws);if(!q){q={items:[],busy:false,nextAt:0,bytes:0};queues.set(ws,q);}const bytes=bytesOf(event.data);q.items.push({event,bytes});q.bytes+=bytes;state.queued++;pump(ws);}'
-    +'function capture(ws){if(!ws||installed.has(ws))return;installed.add(ws);originalAdd.call(ws,"message",event=>{if(delayed.has(event))return;state.captured++;const aviator=isAviator(ws);const wait=aviator?state.delayMs:0;if(!aviator||wait<=0){state.delivered++;return;}try{event.stopImmediatePropagation();}catch{}setTimeout(()=>enqueue(ws,event),wait);},true);}'
+    +'function capture(ws){if(!ws||installed.has(ws))return;installed.add(ws);originalAdd.call(ws,"message",event=>{if(delayed.has(event))return;state.captured++;const aviator=isAviator(ws);const wait=aviator?state.delayMs:0;if(!aviator){state.delivered++;return;}try{event.stopImmediatePropagation();}catch{}if(wait>0)setTimeout(()=>enqueue(ws,event),wait);else enqueue(ws,event);},true);}'
     +'function proxy(C){if(typeof C!=="function")return C;try{return new Proxy(C,{construct(target,args,newTarget){const ws=Reflect.construct(target,args,newTarget);capture(ws);return ws;},apply(target,thisArg,args){return Reflect.apply(target,thisArg,args);}});}catch{return C;}}'
     +'let exposed=proxy(Native);try{G.WebSocket=exposed;}catch{}'
     +'try{const desc=Object.getOwnPropertyDescriptor(G,"WebSocket");if(desc&&desc.configurable){Object.defineProperty(G,"WebSocket",{configurable:true,enumerable:desc.enumerable,get(){return exposed;},set(next){exposed=proxy(next);}});}}catch{}'
@@ -203,7 +203,7 @@ async function configureDebugger(tabId,screenId,delayMs,active){
   const state=stateFor(tabId);
   const nextScreen=String(screenId||"");
   const nextDelay=Math.max(0,Number(delayMs)||0);
-  const nextActive=!!active&&nextDelay>0;
+  // Tela 2 permanece instrumentada para forçar o consumo do WebSocket Aviator a 290 kbps, mesmo sem atraso temporal.\n  const nextActive=(nextScreen==="2")|| (Boolean(active)&&nextDelay>0);
 
   if(state.attached&&state.active&&nextActive&&state.screenId===nextScreen&&state.selectedFrameId){
     state.delayMs=nextDelay;
