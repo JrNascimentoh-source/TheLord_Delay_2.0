@@ -269,9 +269,32 @@ async function injectIntoSession(state,source,contextId){
 
 async function configureDebugger(tabId,screenId,delayMs,active){
   const state=stateFor(tabId);
-  state.screenId=String(screenId||"");
-  state.delayMs=Math.max(0,Number(delayMs)||0);
-  state.active=!!active&&state.delayMs>0;
+  const nextScreen=String(screenId||"");
+  const nextDelay=Math.max(0,Number(delayMs)||0);
+  const nextActive=!!active&&nextDelay>0;
+
+  if(state.attached&&state.active&&nextActive&&state.screenId===nextScreen&&state.selectedFrameId){
+    state.delayMs=nextDelay;
+    state.active=true;
+    state.error="";
+    for(const [sid,target] of state.sessions){
+      if(!target.hooked)continue;
+      try{
+        await cdp(tabId,"Runtime.evaluate",{
+          expression:`globalThis.__THELORD_CDP_DELAY_HOOK__?.set(${nextDelay},${JSON.stringify(nextScreen)})`,
+          returnByValue:true,
+          silent:true
+        },sid||undefined);
+      }catch{}
+    }
+    state.status="updated";
+    postStatus(tabId);
+    return;
+  }
+
+  state.screenId=nextScreen;
+  state.delayMs=nextDelay;
+  state.active=nextActive;
   state.error="";
 
   if(!state.active){
