@@ -11,7 +11,8 @@
     host === "127.0.0.1" ||
     host === "localhost" ||
     host === "7a7bb.com" ||
-    host.endsWith(".7a7bb.com");
+    host.endsWith(".7a7bb.com") ||
+    host === "game.r-o-4-m.com";
   if (!supported) return;
 
   let delayMs = 0;
@@ -39,8 +40,17 @@
     }
   }
 
+  function shouldDelaySocket(socket) {
+    try {
+      const url = new URL(socket.url);
+      return url.pathname === "/parties/main/aviator";
+    } catch {
+      return false;
+    }
+  }
+
   function deliver(listener, socket, event) {
-    const wait = delayMs;
+    const wait = shouldDelaySocket(socket) ? delayMs : 0;
     if (wait <= 0) return callListener(listener, socket, event);
 
     setTimeout(() => {
@@ -185,7 +195,7 @@
   function postStatus(extra = {}) {
     const status = {
       source: "thelord-delay-network",
-      version: 4,
+      version: 5,
       delayMs,
       screenId,
       host: location.hostname,
