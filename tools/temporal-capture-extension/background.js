@@ -158,17 +158,21 @@ function shouldHookContext(state,source,params){
 function makeHookExpression(delayMs,screenId){
   const d=Math.max(0,Number(delayMs)||0);
   const sid=String(screenId||"");
-  return '(()=>{const CFG={delayMs:'+d+',screenId:'+JSON.stringify(sid)+',version:2};'
+  const kbps=290;
+  return '(()=>{const CFG={delayMs:'+d+',screenId:'+JSON.stringify(sid)+',bandwidthKbps:'+kbps+',version:3};'
     +'const G=globalThis;const old=G.__THELORD_CDP_DELAY_HOOK__;'
-    +'if(old&&old.version===2){old.set(CFG.delayMs,CFG.screenId);return "updated";}'
-    +'const state={version:2,delayMs:CFG.delayMs,screenId:CFG.screenId,captured:0,delivered:0};'
-    +'G.__THELORD_CDP_DELAY_HOOK__={version:2,set:(ms,id)=>{state.delayMs=Math.max(0,Number(ms)||0);state.screenId=String(id||"");},status:()=>({...state})};'
+    +'if(old&&old.version===3){old.set(CFG.delayMs,CFG.screenId,CFG.bandwidthKbps);return "updated";}'
+    +'const state={version:3,delayMs:CFG.delayMs,screenId:CFG.screenId,bandwidthKbps:CFG.bandwidthKbps,captured:0,delivered:0,queued:0,throttledBytes:0};'
+    +'G.__THELORD_CDP_DELAY_HOOK__={version:3,set:(ms,id,kbps)=>{state.delayMs=Math.max(0,Number(ms)||0);state.screenId=String(id||"");state.bandwidthKbps=Math.max(0,Number(kbps)||0);},status:()=>({...state})};'
     +'const Native=G.WebSocket;if(typeof Native!=="function")return "no-websocket";'
     +'const originalAdd=Native.prototype&&Native.prototype.addEventListener;if(typeof originalAdd!=="function")return "no-addEventListener";'
-    +'const installed=new WeakSet();const delayed=new WeakSet();'
+    +'const installed=new WeakSet();const delayed=new WeakSet();const queues=new WeakMap();'
     +'function isAviator(ws){try{return new URL(ws.url).pathname==="/parties/main/aviator";}catch{return false;}}'
-    +'function release(ws,event){let copy;try{copy=new MessageEvent("message",{data:event.data,origin:event.origin||"",lastEventId:event.lastEventId||"",source:event.source||null,ports:event.ports||[]});}catch{copy=event;}delayed.add(copy);state.delivered++;try{ws.dispatchEvent(copy);}catch{}}'
-    +'function capture(ws){if(!ws||installed.has(ws))return;installed.add(ws);originalAdd.call(ws,"message",event=>{if(delayed.has(event))return;state.captured++;const wait=isAviator(ws)?state.delayMs:0;if(wait<=0){state.delivered++;return;}try{event.stopImmediatePropagation();}catch{}setTimeout(()=>release(ws,event),wait);},true);}'
+    +'function bytesOf(data){try{if(typeof data==="string")return new TextEncoder().encode(data).byteLength;if(data instanceof ArrayBuffer)return data.byteLength;if(ArrayBuffer.isView(data))return data.byteLength;if(typeof Blob!=="undefined"&&data instanceof Blob)return data.size;}catch{}return 0;}'
+    +'function dispatch(ws,event){let copy;try{copy=new MessageEvent("message",{data:event.data,origin:event.origin||"",lastEventId:event.lastEventId||"",source:event.source||null,ports:event.ports||[]});}catch{copy=event;}delayed.add(copy);state.delivered++;try{ws.dispatchEvent(copy);}catch{}}'
+    +'function pump(ws){const q=queues.get(ws);if(!q||q.busy||!q.items.length)return;q.busy=true;const item=q.items.shift();q.bytes=Math.max(0,q.bytes-item.bytes);const rate=Math.max(1,(state.bandwidthKbps*1000)/8);const now=performance.now();const start=Math.max(now,q.nextAt||now);const wait=Math.max(0,start-now);q.nextAt=start+(item.bytes/rate)*1000;state.throttledBytes+=item.bytes;setTimeout(()=>{dispatch(ws,item.event);q.busy=false;pump(ws);},wait);}'
+    +'function enqueue(ws,event){let q=queues.get(ws);if(!q){q={items:[],busy:false,nextAt:0,bytes:0};queues.set(ws,q);}const bytes=bytesOf(event.data);q.items.push({event,bytes});q.bytes+=bytes;state.queued++;pump(ws);}'
+    +'function capture(ws){if(!ws||installed.has(ws))return;installed.add(ws);originalAdd.call(ws,"message",event=>{if(delayed.has(event))return;state.captured++;const aviator=isAviator(ws);const wait=aviator?state.delayMs:0;if(!aviator||wait<=0){state.delivered++;return;}try{event.stopImmediatePropagation();}catch{}setTimeout(()=>enqueue(ws,event),wait);},true);}'
     +'function proxy(C){if(typeof C!=="function")return C;try{return new Proxy(C,{construct(target,args,newTarget){const ws=Reflect.construct(target,args,newTarget);capture(ws);return ws;},apply(target,thisArg,args){return Reflect.apply(target,thisArg,args);}});}catch{return C;}}'
     +'let exposed=proxy(Native);try{G.WebSocket=exposed;}catch{}'
     +'try{const desc=Object.getOwnPropertyDescriptor(G,"WebSocket");if(desc&&desc.configurable){Object.defineProperty(G,"WebSocket",{configurable:true,enumerable:desc.enumerable,get(){return exposed;},set(next){exposed=proxy(next);}});}}catch{}'
