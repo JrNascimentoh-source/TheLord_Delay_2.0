@@ -159,21 +159,21 @@ function makeHookExpression(delayMs,screenId){
   const d=Math.max(0,Number(delayMs)||0);
   const sid=String(screenId||"");
   return '(()=>{const CFG={delayMs:'+d+',screenId:'+JSON.stringify(sid)+',version:2};'
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
-NaN
+    +'const G=globalThis;const old=G.__THELORD_CDP_DELAY_HOOK__;'
+    +'if(old&&old.version===2){old.set(CFG.delayMs,CFG.screenId);return "updated";}'
+    +'const state={version:2,delayMs:CFG.delayMs,screenId:CFG.screenId,captured:0,delivered:0};'
+    +'G.__THELORD_CDP_DELAY_HOOK__={version:2,set:(ms,id)=>{state.delayMs=Math.max(0,Number(ms)||0);state.screenId=String(id||"");},status:()=>({...state})};'
+    +'const Native=G.WebSocket;if(typeof Native!=="function")return "no-websocket";'
+    +'const originalAdd=Native.prototype&&Native.prototype.addEventListener;if(typeof originalAdd!=="function")return "no-addEventListener";'
+    +'const installed=new WeakSet();const delayed=new WeakSet();'
+    +'function isAviator(ws){try{return new URL(ws.url).pathname==="/parties/main/aviator";}catch{return false;}}'
+    +'function release(ws,event){let copy;try{copy=new MessageEvent("message",{data:event.data,origin:event.origin||"",lastEventId:event.lastEventId||"",source:event.source||null,ports:event.ports||[]});}catch{copy=event;}delayed.add(copy);state.delivered++;try{ws.dispatchEvent(copy);}catch{}}'
+    +'function capture(ws){if(!ws||installed.has(ws))return;installed.add(ws);originalAdd.call(ws,"message",event=>{if(delayed.has(event))return;state.captured++;const wait=isAviator(ws)?state.delayMs:0;if(wait<=0){state.delivered++;return;}try{event.stopImmediatePropagation();}catch{}setTimeout(()=>release(ws,event),wait);},true);}'
+    +'function proxy(C){if(typeof C!=="function")return C;try{return new Proxy(C,{construct(target,args,newTarget){const ws=Reflect.construct(target,args,newTarget);capture(ws);return ws;},apply(target,thisArg,args){return Reflect.apply(target,thisArg,args);}});}catch{return C;}}'
+    +'let exposed=proxy(Native);try{G.WebSocket=exposed;}catch{}'
+    +'try{const desc=Object.getOwnPropertyDescriptor(G,"WebSocket");if(desc&&desc.configurable){Object.defineProperty(G,"WebSocket",{configurable:true,enumerable:desc.enumerable,get(){return exposed;},set(next){exposed=proxy(next);}});}}catch{}'
+    +'try{setInterval(()=>{try{if(G.WebSocket!==exposed){exposed=proxy(G.WebSocket);G.WebSocket=exposed;}}catch{}},250);}catch{}'
+    +'return "installed";})()';
 }
 
 async function injectIntoSession(state,source,contextId){
