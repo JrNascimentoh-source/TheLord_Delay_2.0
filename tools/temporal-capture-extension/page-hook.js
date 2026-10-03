@@ -14,6 +14,8 @@
     host.endsWith(".7a7bb.com") ||
     host === "7a711.com" ||
     host.endsWith(".7a711.com") ||
+    host === "7a7.vip" ||
+    host.endsWith(".7a7.vip") ||
     host === "game.r-o-4-m.com";
   if (!supported) return;
 
