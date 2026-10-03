@@ -54,6 +54,12 @@
     }
   }
 
+  function deliver(listener, target, event) {
+    const wait = configured ? delayMs : 0;
+    if (wait <= 0) return callListener(listener, target, event);
+    setTimeout(() => callListener(listener, target, event), wait);
+  }
+
   function deliver(listener, socket, event) {
     const wait = shouldDelaySocket(socket) ? delayMs : 0;
     if (wait <= 0) return callListener(listener, socket, event);
@@ -207,6 +213,8 @@
       host: location.hostname,
       href: location.href,
       hooked: true,
+      capturedCount,
+      deliveredCount,
       ...extra
     };
     try { window.postMessage(status, "*"); } catch {}
