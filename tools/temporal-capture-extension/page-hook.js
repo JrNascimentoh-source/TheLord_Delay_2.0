@@ -60,15 +60,6 @@
     setTimeout(() => callListener(listener, target, event), wait);
   }
 
-  function deliver(listener, socket, event) {
-    const wait = shouldDelaySocket(socket) ? delayMs : 0;
-    if (wait <= 0) return callListener(listener, socket, event);
-
-    setTimeout(() => {
-      callListener(listener, socket, event);
-    }, wait);
-  }
-
   NativeWebSocket.prototype.addEventListener = function(type, listener, options) {
     if (type !== "message" || !listener) {
       return originalAdd.call(this, type, listener, options);
