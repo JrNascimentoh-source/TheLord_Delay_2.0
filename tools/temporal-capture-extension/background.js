@@ -158,94 +158,22 @@ function shouldHookContext(state,source,params){
 function makeHookExpression(delayMs,screenId){
   const d=Math.max(0,Number(delayMs)||0);
   const sid=String(screenId||"");
-  return `(()=>{const CFG={delayMs:${d},screenId:${JSON.stringify(sid)},version:1};
-    const G=globalThis;
-    const old=G.__THELORD_CDP_DELAY_HOOK__;
-    if(old&&old.version===1){old.set(CFG.delayMs,CFG.screenId);return "updated";}
-    const state={version:1,delayMs:CFG.delayMs,screenId:CFG.screenId,captured:0,delivered:0};
-    G.__THELORD_CDP_DELAY_HOOK__={version:1,set:(ms,id)=>{state.delayMs=Math.max(0,Number(ms)||0);state.screenId=String(id||"");},status:()=>({...state})};
-    const Native=G.WebSocket;
-    if(typeof Native!=="function")return "no-websocket";
-    const originalAdd=Native.prototype.addEventListener;
-    const originalRemove=Native.prototype.removeEventListener;
-    const nativeOnMessage=Object.getOwnPropertyDescriptor(Native.prototype,"onmessage");
-    const installed=new WeakSet();
-    const delayed=new WeakSet();
-    const listeners=new WeakMap();
-    const handlers=new WeakMap();
-    function isAviator(ws){try{return new URL(ws.url).pathname==="/parties/main/aviator";}catch{return false;}}
-    function dispatch(ws,event){
-      const data=event.data;
-      let copy;
-      try{copy=new MessageEvent("message",{data,origin:event.origin||"",lastEventId:event.lastEventId||"",source:event.source||null,ports:event.ports||[]});}
-      catch{copy=event;}
-      delayed.add(copy);
-      state.delivered++;
-      try{ws.dispatchEvent(copy);}catch{}
-    }
-    function capture(ws){
-      if(!ws||installed.has(ws))return;
-      installed.add(ws);
-      originalAdd.call(ws,"message",event=>{
-        if(delayed.has(event))return;
-        state.captured++;
-        const wait=isAviator(ws)?state.delayMs:0;
-        if(wait<=0){state.delivered++;return;}
-        try{event.stopImmediatePropagation();}catch{}
-        setTimeout(()=>dispatch(ws,event),wait);
-      },true);
-    }
-    Native.prototype.addEventListener=function(type,listener,options){
-      if(type!=="message"||!listener)return originalAdd.call(this,type,listener,options);
-      capture(this);
-      const wrapped=event=>{
-        const wait=isAviator(this)?state.delayMs:0;
-        if(wait<=0)return typeof listener==="function"?listener.call(this,event):listener.handleEvent?.(event);
-        setTimeout(()=>typeof listener==="function"?listener.call(this,event):listener.handleEvent?.(event),wait);
-      };
-      let list=listeners.get(this);if(!list){list=[];listeners.set(this,list);}
-      list.push({listener,wrapped,options});
-      return originalAdd.call(this,type,wrapped,options);
-    };
-    Native.prototype.removeEventListener=function(type,listener,options){
-      if(type!=="message"||!listener)return originalRemove.call(this,type,listener,options);
-      const list=listeners.get(this)||[];
-      for(const item of list.filter(x=>x.listener===listener)){
-        originalRemove.call(this,type,item.wrapped,options);
-        const i=list.indexOf(item);if(i>=0)list.splice(i,1);
-      }
-    };
-    if(nativeOnMessage?.get&&nativeOnMessage?.set){
-      Object.defineProperty(Native.prototype,"onmessage",{configurable:nativeOnMessage.configurable,enumerable:nativeOnMessage.enumerable,
-        get(){return handlers.get(this)?.handler??nativeOnMessage.get.call(this);},
-        set(handler){
-          capture(this);
-          const prev=handlers.get(this);
-          if(prev)originalRemove.call(this,"message",prev.wrapped);
-          if(typeof handler!=="function"){handlers.delete(this);return nativeOnMessage.set.call(this,handler);}
-          const wrapped=event=>{const wait=isAviator(this)?state.delayMs:0;if(wait<=0)return handler.call(this,event);setTimeout(()=>handler.call(this,event),wait);};
-          handlers.set(this,{handler,wrapped});nativeOnMessage.set.call(this,wrapped);
-        }
-      });
-    }
-    function proxy(C){
-      if(typeof C!=="function")return C;
-      try{return new Proxy(C,{construct(target,args,newTarget){const ws=Reflect.construct(target,args,newTarget);capture(ws);return ws;},apply(target,thisArg,args){return Reflect.apply(target,thisArg,args);}});}catch{return C;}
-    }
-    let exposed=proxy(Native);
-    try{G.WebSocket=exposed;}catch{}
-    try{
-      const desc=Object.getOwnPropertyDescriptor(G,"WebSocket");
-      if(desc?.configurable){
-        Object.defineProperty(G,"WebSocket",{configurable:true,enumerable:desc.enumerable,get(){return exposed;},set(next){exposed=proxy(next);}});
-      }
-    }catch{}
-    try{
-      const timer=setInterval(()=>{try{if(G.WebSocket!==exposed){exposed=proxy(G.WebSocket);G.WebSocket=exposed;}}catch{}},1000);
-      if(timer?.unref)timer.unref();
-    }catch{}
-    return "installed";
-  })()`;
+  return '(()=>{const CFG={delayMs:'+d+',screenId:'+JSON.stringify(sid)+',version:2};'
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
+NaN
 }
 
 async function injectIntoSession(state,source,contextId){
