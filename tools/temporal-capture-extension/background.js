@@ -315,6 +315,19 @@ chrome.debugger.onEvent.addListener(async(source,method,params)=>{
     return;
   }
 
+  if(method==="Page.frameAttached"){
+    const frameId=String(params?.frameId||"");
+    const parentId=String(params?.parentFrameId||"");
+    if(frameId&&state.selectedFrames.has(parentId))state.selectedFrames.add(frameId);
+    return;
+  }
+
+  if(method==="Page.frameDetached"){
+    const frameId=String(params?.frameId||"");
+    if(frameId&&frameId!==state.selectedFrameId)state.selectedFrames.delete(frameId);
+    return;
+  }
+
   if(method==="Runtime.executionContextCreated"){
     if(!shouldHookContext(state,source,params))return;
     const context=params.context;
