@@ -48,28 +48,6 @@
       "world": "ISOLATED",
       "all_frames": true,
       "match_origin_as_fallback": true
-    },
-    {
-      "matches": [
-        "http://127.0.0.1/*",
-        "http://localhost/*",
-        "https://127.0.0.1/*",
-        "https://localhost/*",
-        "https://7a7bb.com/*",
-        "https://*.7a7bb.com/*",
-        "https://7a711.com/*",
-        "https://7a7.vip/*",
-        "https://*.7a7.vip/*",
-        "https://game.r-o-4-m.com/*",
-        "https://*.game.r-o-4-m.com/*"
-      ],
-      "js": [
-        "page-hook.js"
-      ],
-      "run_at": "document_start",
-      "world": "MAIN",
-      "all_frames": true,
-      "match_origin_as_fallback": true
     }
   ]
 }
