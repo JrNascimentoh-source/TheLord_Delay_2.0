@@ -120,11 +120,25 @@ function updateDiagnostics(){
    const el=$("#diag"+id);if(el)el.textContent=lines.join("\n");
  });
  const relay=window.__TheLordTemporalRelay;
- const src=$("#diagSource");if(src)src.textContent=Object.values(window.__theLordHookStatus).some(x=>x?.hooked)?"Captura de WebSocket da página: ativa":(relay?"Relay: "+relay.url+" • canal: "+(relay.channel||"aviator"):"Fonte temporal: nenhum relay configurado");
+ const cdp=window.__theLordCdpStatus||{};
+ const src=$("#diagSource");
+ if(src)src.textContent=cdp.attached?"CDP: "+(cdp.status||"ativo")+" • "+(cdp.injected||0)+" contextos instrumentados":Object.values(window.__theLordHookStatus).some(x=>x?.hooked)?"Captura de WebSocket da página: ativa":(relay?"Relay: "+relay.url+" • canal: "+(relay.channel||"aviator"):"Fonte temporal: nenhum relay configurado");
 }
 function syncRange(){const v=+range.value;range.style.setProperty("--p",v/60*100+"%");badge.textContent=v+"s"}
 function syncDelayBridge(){window.TheLordDelayBridge?.syncAll?.();[1,2].forEach(id=>window.TheLordDelayBridge?.rebase?.(id))}
-function syncTemporalRelay(){return false}
+function syncTemporalRelay(){
+  const selected=targets();
+  const id=selected.length===1?String(selected[0].id):"";
+  window.postMessage({
+    source:"thelord-cdp",
+    version:1,
+    type:"config",
+    screenId:id,
+    delayMs:selected.length?Number(selected[0].delay)||0:0,
+    active:selected.length===1&&!!selected[0].active
+  },location.origin);
+  return true;
+}
 function onSlider(){targets().forEach(s=>{s.delay=+range.value;s.render()});syncRange();syncDelayBridge();syncTemporalRelay()}
 function syncButton(){const selected=targets();const on=selected.length>0&&selected.every(s=>s.active);btn.classList.toggle("on",on);btn.disabled=selected.length===0;btn.setAttribute("aria-pressed",String(on));$("#toggle-label").textContent=on?"DESATIVAR DELAY":"ATIVAR DELAY"}
 function onTarget(){const selected=targets();range.value=selected.length?selected[0].delay:0;syncRange();screens[1].root.classList.toggle("selected",["1","all"].includes(target.value));screens[2].root.classList.toggle("selected",["2","all"].includes(target.value));syncButton();syncDelayBridge();syncTemporalRelay()}
@@ -158,6 +172,12 @@ saveConfigBtn.onclick=saveLayout;
 range.addEventListener("input",onSlider);target.addEventListener("change",onTarget);btn.addEventListener("click",toggle);onTarget();
 setInterval(updateDiagnostics,1000);
 window.addEventListener("thelord:source-event",updateDiagnostics);
+window.addEventListener("message",e=>{
+  const d=e.data;
+  if(!d||d.source!=="thelord-cdp"||d.type!=="status")return;
+  window.__theLordCdpStatus=d.status||{};
+  updateDiagnostics();
+});
 window.addEventListener("message",e=>{const d=e.data;if(!d||d.source!=="thelord-delay-network"||!d.hooked)return;const id=String(d.screenId||"");if(id!=="1"&&id!=="2")return;window.__theLordHookStatus[id]=d;updateDiagnostics();});
 $("#diagRefresh")?.addEventListener("click",updateDiagnostics);
 setTimeout(updateDiagnostics,500);
