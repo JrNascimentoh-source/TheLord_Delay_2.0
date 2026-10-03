@@ -26,6 +26,7 @@
   const handlerMap = new WeakMap();
   const socketCaptureInstalled = new WeakSet();
   const delayedEvents = new WeakSet();
+  const frameToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
   const NativeWebSocket = window.WebSocket;
   const websocketConstructors = new WeakSet();
   let activeWebSocketConstructor = NativeWebSocket;
@@ -304,9 +305,10 @@
   function postStatus(extra = {}) {
     const status = {
       source: "thelord-delay-network",
-      version: 8,
+      version: 9,
       delayMs,
       screenId,
+      frameToken,
       configured,
       host: location.hostname,
       href: location.href,
@@ -341,6 +343,7 @@
             type:"THELORD_DELAY_CONFIG",
             version:1,
             screenId,
+            frameToken,
             active:delayMs>0,
             delayMs
           },"*");
@@ -355,6 +358,9 @@
      * actual 7a7 page. Accept the configuration from an ancestor frame
      * and propagate it to child frames.
      */
+    // A configuration is local to this exact iframe/document instance.
+    // Never inherit a delay from another screen merely because both share the same tab/endpoint.
+    if (data.frameToken && data.frameToken === frameToken) return;
     delayMs = normalizeDelay(data.delayMs);
     screenId = String(data.screenId || "");
     configured = true;
