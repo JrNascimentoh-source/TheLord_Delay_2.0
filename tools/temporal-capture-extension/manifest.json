@@ -13,6 +13,7 @@
     "https://localhost/*",
     "https://7a7bb.com/*",
     "https://*.7a7bb.com/*",
+    "https://7a711.com/*",
     "https://game.r-o-4-m.com/*"
   ],
   "background": {
@@ -28,6 +29,7 @@
         "https://localhost/*",
         "https://7a7bb.com/*",
         "https://*.7a7bb.com/*",
+        "https://7a711.com/*",
         "https://game.r-o-4-m.com/*"
       ],
       "js": [
@@ -46,6 +48,7 @@
         "https://localhost/*",
         "https://7a7bb.com/*",
         "https://*.7a7bb.com/*",
+        "https://7a711.com/*",
         "https://game.r-o-4-m.com/*"
       ],
       "js": [
