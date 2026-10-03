@@ -24,6 +24,8 @@
   let configured = false;
   const listenerMap = new WeakMap();
   const handlerMap = new WeakMap();
+  const socketCaptureInstalled = new WeakSet();
+  const delayedEvents = new WeakSet();
   const NativeWebSocket = window.WebSocket;
 
   const originalAdd = WebSocket.prototype.addEventListener;
@@ -32,6 +34,9 @@
     WebSocket.prototype,
     "onmessage"
   );
+
+  let capturedCount = 0;
+  let deliveredCount = 0;
 
   function normalizeDelay(value) {
     const n = Number(value);
@@ -60,12 +65,61 @@
     setTimeout(() => callListener(listener, target, event), wait);
   }
 
+  function cloneMessageEvent(event) {
+    try {
+      return new MessageEvent("message", {
+        data: event.data,
+        origin: event.origin || "",
+        lastEventId: event.lastEventId || "",
+        source: event.source || null,
+        ports: event.ports || []
+      });
+    } catch {
+      return event;
+    }
+  }
+
+  function releaseSocketEvent(socket, event) {
+    const copy = cloneMessageEvent(event);
+    delayedEvents.add(copy);
+    deliveredCount++;
+    try {
+      socket.dispatchEvent(copy);
+    } catch {}
+  }
+
+  function installSocketCapture(socket) {
+    if (!socket || socketCaptureInstalled.has(socket)) return;
+    socketCaptureInstalled.add(socket);
+
+    /*
+     * Capture the native message immediately when the socket is created.
+     * This is deliberately registered before the game normally installs
+     * its own message handlers, including handlers installed by wrappers.
+     */
+    originalAdd.call(socket, "message", event => {
+      if (delayedEvents.has(event)) return;
+
+      capturedCount++;
+      const wait = shouldDelaySocket(socket) && configured ? delayMs : 0;
+
+      if (wait <= 0) {
+        deliveredCount++;
+        return;
+      }
+
+      try { event.stopImmediatePropagation(); } catch {}
+      setTimeout(() => releaseSocketEvent(socket, event), wait);
+    }, true);
+  }
+
   NativeWebSocket.prototype.addEventListener = function(type, listener, options) {
     if (type !== "message" || !listener) {
       return originalAdd.call(this, type, listener, options);
     }
 
-    const wrapped = event => deliver(listener, this, event);
+    installSocketCapture(this);
+    const wrapped = event => callListener(listener, this, event);
     let map = listenerMap.get(this);
     if (!map) {
       map = [];
@@ -103,6 +157,7 @@
         return state ? state.handler : nativeOnMessage.get.call(this);
       },
       set(handler) {
+        installSocketCapture(this);
         const previous = handlerMap.get(this);
         if (previous) {
           originalRemove.call(this, "message", previous.wrapped);
@@ -113,7 +168,7 @@
           return nativeOnMessage.set.call(this, handler);
         }
 
-        const wrapped = event => deliver(handler, this, event);
+        const wrapped = event => callListener(handler, this, event);
         handlerMap.set(this, {handler, wrapped});
         nativeOnMessage.set.call(this, wrapped);
       }
@@ -123,7 +178,9 @@
   try {
     const WrappedWebSocket = new Proxy(NativeWebSocket, {
       construct(target, args, newTarget) {
-        return Reflect.construct(target, args, newTarget);
+        const socket = Reflect.construct(target, args, newTarget);
+        installSocketCapture(socket);
+        return socket;
       },
       apply(target, thisArg, args) {
         return Reflect.apply(target, thisArg, args);
@@ -197,7 +254,7 @@
   function postStatus(extra = {}) {
     const status = {
       source: "thelord-delay-network",
-      version: 6,
+      version: 7,
       delayMs,
       screenId,
       configured,
