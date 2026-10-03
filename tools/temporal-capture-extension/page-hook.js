@@ -17,6 +17,7 @@
 
   let delayMs = 0;
   let screenId = "";
+  let configured = false;
   const listenerMap = new WeakMap();
   const handlerMap = new WeakMap();
   const NativeWebSocket = window.WebSocket;
@@ -195,9 +196,10 @@
   function postStatus(extra = {}) {
     const status = {
       source: "thelord-delay-network",
-      version: 5,
+      version: 6,
       delayMs,
       screenId,
+      configured,
       host: location.hostname,
       href: location.href,
       hooked: true,
@@ -219,7 +221,22 @@
 
   window.addEventListener("message", event => {
     const data = event.data;
-    if (!data || data.type !== "THELORD_DELAY_CONFIG") return;
+    if (!data) return;
+    if (data.type === "THELORD_DELAY_CONFIG_REQUEST") {
+      if (configured && event.source && event.source !== window) {
+        try {
+          event.source.postMessage({
+            type:"THELORD_DELAY_CONFIG",
+            version:1,
+            screenId,
+            active:delayMs>0,
+            delayMs
+          },"*");
+        } catch {}
+      }
+      return;
+    }
+    if (data.type !== "THELORD_DELAY_CONFIG") return;
 
     /*
      * The parent app may target an iframe that itself contains the
@@ -228,10 +245,16 @@
      */
     delayMs = normalizeDelay(data.delayMs);
     screenId = String(data.screenId || "");
+    configured = true;
 
     postStatus({configured: true});
     broadcastConfig(data);
   });
 
   postStatus({configured: false});
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({type:"THELORD_DELAY_CONFIG_REQUEST",version:1},"*");
+    }
+  } catch {}
 })();
