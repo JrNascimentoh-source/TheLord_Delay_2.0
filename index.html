@@ -117,6 +117,9 @@ function updateDiagnostics(){
     "Endpoint: "+(f.url||s.url||hook?.href||"aguardando fonte")
    ];
    if(hook?.hooked) lines.push("Hook: "+(Number(hook.delayMs||0)/1000)+"s • "+(hook.host||"7a7"));
+   const cdp=window.__theLordCdpStatus||{};
+   if(cdp.screenId===String(id)) lines.push("CDP: "+(cdp.status||"")+
+     " • "+(cdp.injected||0)+" contextos • "+(cdp.targets?.length||0)+" targets");
    const el=$("#diag"+id);if(el)el.textContent=lines.join("\n");
  });
  const relay=window.__TheLordTemporalRelay;
